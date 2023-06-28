@@ -20,7 +20,8 @@ def stimulus_creation(in_path, save_type):
     entered in in_path. Type of file saved out defined by 
     save_type (1=binary, 2=binary[with actual distances], 3=image)"""
     # Input and output paths
-    data_path = op.join(in_path)
+    data_path = op.abspath(in_path)
+    print(data_path)
 
     # Find all subjects
     sub_ids = glob.glob(data_path)
@@ -467,4 +468,4 @@ def stimulus_creation(in_path, save_type):
 
 # Run script on local machine
 if __name__ == "__main__":
-    print(stimulus_creation("../../AMPB/data/*", 1))
+    print(stimulus_creation("OneDrive - UW/AMPB/data/*", 1))
