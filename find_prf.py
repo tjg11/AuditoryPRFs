@@ -24,6 +24,7 @@ sanity_check = True
 # sanity_check = False
 plot_timecourses = True
 # plot_timecourse = False
+print_status = False
 
 # Pick a subject
 subject_id = "sub-EBxGxCCx1986"
@@ -46,6 +47,31 @@ if sanity_check:
 # Generate gaussian function
 def generate_gaussian(x, b, c):
     return np.exp(-(((x - b) ** 2) / (2 * c ** 2)))
+
+# Takes mu and theta as array and stim_space as array
+def model_function(params, stim_space):
+     return np.exp(-(((stim_space - params[0]) ** 2) / (2 * params[1] ** 2)))
+
+# Prediction function: multiply convolved stimulus and model
+def prediction_function(model, convolved_stim):
+    return np.matmul(convolved_stim, model )
+
+# Error function: get mode, prediction, and calculate error between prediction and real data
+def error_function(params, stim_space, real_data, convolved_stim):
+    # Get model
+    model = model_function(params, stim_space)
+
+    # Get y hat
+    pred  = prediction_function(model, convolved_stim) # something to get y_pred
+    
+    # Normalize real data and pred data - move normalization of real data
+    if np.amax(pred) != np.amin(pred):
+        pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
+    
+    # Calculate MSE
+    error = mean_squared_error(pred, real_data) # or just math
+    
+    return error
 
 # Pad beginning of stimulus with 8 seconds of zeros (so 800 rows).
 # Padding parameters = (before, after)
@@ -83,126 +109,136 @@ bold_img = nib.load(brain_path)
 bold_data = bold_img.get_fdata()
 print(f"Shape of brain data is {bold_data.shape}.")
 
-# Select a voxel
+# Generate voxel coordinate grid
+x_start = 40
+x_end = 50
 
-x_coord = 50
-y_coord = 22
-z_coord = 21
-voxel = bold_data[x_coord, y_coord, z_coord, :]
-norm_voxel = (voxel - np.amin(voxel)) / (np.amax(voxel) - np.amin(voxel))
+y_start = 30
+y_end = 40
 
-# Generate multiple gaussians and find best fit
+z_start = 21
+z_end = 22
 
-x = np.linspace(-30, 30, 9)
- 
-mus    = np.arange(-41, 40, 2)
-sigmas = np.arange(-41, 40, 2)
+x_coords = np.arange(x_start, x_end)
+y_coords = np.arange(y_start, y_end)
+z_coords = np.arange(z_start, z_end)
+
+xv, yv, zv = np.meshgrid(x_coords, y_coords, z_coords,  indexing='ij')
+
+grid_coords = np.vstack([xv.flatten(), yv.flatten(), zv.flatten()]).T
+
+total_voxel = grid_coords.shape[0]
+done_voxel  = 0
+
+# Generate mu / sigma grid
+
+stim_space = np.linspace(-30, 30, 9)
+
 
 # mus    = np.arange(-21, 20, 2)
 # sigmas = np.arange(-21, 20, 2)
-mus, sigmas = np.meshgrid(mus, sigmas)
 
 
-error_matrix = np.zeros(mus.shape).flatten()
-iterable = zip(mus.flatten(), sigmas.flatten())
+all_results = []
+tic = time.time()
+for coord in grid_coords: # for each coordinate in voxel grid
 
-for i, params in enumerate(iterable):
-    mu, sigma = params # current parameters
-    # print(params)
-    try:
+# Select a voxel - this needs to be done in loop
+    x, y, z = coord
+    voxel = bold_data[x, y, z, :]
+    norm_voxel = (voxel - np.amin(voxel)) / (np.amax(voxel) - np.amin(voxel))
 
-        func = generate_gaussian(x, mu, sigma)
+    print(f"\n-----Starting for {x, y, z} voxel------\n")
+
+# Generate multiple gaussians and find best fit - this also needs to be done in loop since voxel will be different
+
+    mus    = np.arange(-41, 40, 2)
+    sigmas = np.arange(-41, 40, 2)
+    mus, sigmas = np.meshgrid(mus, sigmas)
+
+    error_matrix = np.zeros(mus.shape).flatten()
+    all_params   = zip(mus.flatten(), sigmas.flatten())
+    
+    for i, params in enumerate(all_params): # for each coordinate in parameter grid
+        # print(f"Current params are {params}.")
+        mu, sigma = params # current parameters
+        # print(params)
+
+
+        func = generate_gaussian(stim_space, mu, sigma)
         pred_t = np.matmul(c_tr, func)
         corr = pearsonr(voxel, pred_t).statistic
         # print(corr)
         error_matrix[i] = -corr
-    except Exception as error:
-        print(error)
-error_matrix = error_matrix.reshape(mus.shape)
 
-# Find where error was at a minimum
-print(f"Min error is: {np.nanmin(error_matrix)}.\n")
+    error_matrix = error_matrix.reshape(mus.shape)
 
-min_x, min_y = np.where(error_matrix == np.nanmin(error_matrix))
+    # Find where error was at a minimum
+    if print_status:
+        print(f"Min error is: {np.nanmin(error_matrix)}.\n")
 
-print(f"Min error is at {min_x[0]}, {min_y[0]}, which is a mu of {mus[min_x[0]][min_y[0]]} and a sigma of {sigmas[min_x[0]][min_y[0]]}.\n")
+    min_x, min_y = np.where(error_matrix == np.nanmin(error_matrix))
+    if print_status:
+        print(f"Min error is at {min_x[0]}, {min_y[0]}, which is a mu of {mus[min_x[0]][min_y[0]]} and a sigma of {sigmas[min_x[0]][min_y[0]]}.\n")
 
-seed_mu    = mus[min_x[0]][min_y[0]]
-seed_sigma = sigmas[min_x[0]][min_y[0]]
+    seed_mu    = mus[min_x[0]][min_y[0]]
+    seed_sigma = sigmas[min_x[0]][min_y[0]]
 
-# Model function: create stim space and create gaussian model
-stim_space = np.linspace(-30, 30, 9)
-print(stim_space)
+    # based on best mu and sigma get grouping of values around each (the best_mu and best_si values can be found wihtout manually entering them, I just need 
+    # to write the code for it)
 
-# Takes mu and theta as array and stim_space as array
-def model_function(params, stim_space):
-     return np.exp(-(((stim_space - params[0]) ** 2) / (2 * params[1] ** 2)))
+    best_mus = np.arange(seed_mu - 3, seed_mu + 3, 1)
+    best_sis = np.arange(seed_sigma - 3, seed_sigma + 3, 1)
 
-# Prediction function: multiply convolved stimulus and model
-def prediction_function(model, convolved_stim):
-    return np.matmul(convolved_stim, model )
+    best_mus, best_sis = np.meshgrid(best_mus, best_sis)
+    iterable = zip(best_mus.flatten(), best_sis.flatten())
 
-# Error function: get mode, prediction, and calculate error between prediction and real data
-def error_function(params, stim_space, real_data, convolved_stim):
-    # Get model
-    model = model_function(params, stim_space)
+    # initialize dictionary and find best seed among grid
+    grid_results = dict()
+    grid_results['voxel'] = [x, y, z]
+    grid_results['error'] = float('inf')
+    for i, seed in enumerate(iterable):
+        try:
+            if seed[1] != 0:
+                results = minimize(error_function, seed, (stim_space, norm_voxel, c_tr), method='Nelder-Mead')
+            if results.fun < grid_results['error']:
+                grid_results['error'] = results.fun
+                grid_results['best_mu'] = results.x[0]
+                grid_results['best_sigma'] = results.x[1]
+        except:
+            print(f"Could not calculate for {seed}.")
+            print("")
 
-    # Get y hat
-    pred  = prediction_function(model, convolved_stim) # something to get y_pred
     
-    # Normalize real data and pred data - move normalization of real data
-    if np.amax(pred) != np.amin(pred):
-        pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
     
-    # Calculate MSE
-    error = mean_squared_error(pred, real_data) # or just math
-    
-    return error
+    # print results of grid search
+    if print_status: 
+        print(f"Results for voxel: {grid_results['voxel']} ")
+        print(f"Min error: {grid_results['error']}")
+        print(f"Best mu: {grid_results['best_mu']}")
+        print(f"Best sigma: {grid_results['best_sigma']}")
 
-# based on best mu and sigma get grouping of values around each (the best_mu and best_si values can be found wihtout manually entering them, I just need 
-# to write the code for it)
-tic = time.time()
+    done_voxel += 1
 
-best_mu = 10
-best_si = 0.1
+    # perform minimization on best seed
+    best_seed = [grid_results['best_mu'], grid_results['best_sigma']]
+    the_results = minimize(error_function, best_seed, (stim_space, norm_voxel, c_tr), method = "Nelder-Mead") # not in for loop
+    if print_status:
+        print(f"Best mu and sigma: {the_results.x}")
+        print(f"Most minimized error: {the_results.fun}")
 
-best_mus = np.arange(best_mu - 3, best_mu + 3, 1)
-best_sis = np.arange(best_si - 3, best_mu + 3, 1)
+    all_results.append(grid_results)
 
-best_mus, best_sis = np.meshgrid(best_mus, best_sis)
-iterable = zip(best_mus.flatten(), best_sis.flatten())
+    print(f"---------{round((done_voxel / total_voxel) * 100, 2)}% voxels complete----------")
 
-# initialize dictionary and find best seed among grid
-grid_results = dict()
-grid_results['voxel'] = [x_coord, y_coord, z_coord]
-grid_results['error'] = float('inf')
-for i, seed in enumerate(iterable):
-    try:
-        results = minimize(error_function, seed, (stim_space, norm_voxel, c_tr), method='Nelder-Mead')
-        if results.fun < grid_results['error']:
-            grid_results['error'] = results.fun
-            grid_results['best_mu'] = results.x[0]
-            grid_results['best_sigma'] = results.x[1]
-    except:
-        print(f"Could not calculate for {seed}.")
-        print("")
 
 toc = time.time()
-    
-    
-# print results of grid search
-print(f"Results for voxel: {grid_results['voxel']} ")
-print(f"Min error: {grid_results['error']}")
-print(f"Best mu: {grid_results['best_mu']}")
-print(f"Nest sigma: {grid_results['best_sigma']}")
-print(f"Time taken: {toc - tic} seconds\n")
+print(f"Finished computing for all voxels. Time taken: {toc - tic} seconds.")
 
-# perform minimization on best seed
-best_seed = [grid_results['best_mu'], grid_results['best_sigma']]
-the_results = minimize(error_function, best_seed, (stim_space, norm_voxel, c_tr), method = "Nelder-Mead") # not in for loop
-print(f"Best mu and sigma: {the_results.x}")
-print(f"Most minimized error: {the_results.fun}")
-
+print("--------")
+img_name = op.join(base_path, "testing_results.pickle")
+with open(img_name, "wb") as f:
+    pickle.dump(all_results, f) # variable you want to save first then file
 
 
 
