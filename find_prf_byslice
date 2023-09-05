@@ -19,16 +19,22 @@ import os
 
 print("\n+-------------Script Starts Here-------------+\n")
 
+
+# -------------------------------------------------------------------
 # Print sanity check statements and plots?
 sanity_check = True
 # sanity_check = False
 plot_timecourses = True
 # plot_timecourse = False
 print_status = False
+# -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
 # Pick a subject
 subject_id = "sub-EBxGxCCx1986"
+# -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
 # Load one data file
 # For analyzing specific files
 
@@ -43,6 +49,10 @@ if sanity_check:
     print(f"Shape is: {loaded_record.shape}.")
     print(f"Total length of run: {loaded_record.shape[0] / 100} seconds.")
     print(f"Total rows per second: {loaded_record.shape[0] / 416} rows.")
+
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
    
 # Generate gaussian function
 def generate_gaussian(x, b, c):
@@ -73,6 +83,11 @@ def error_function(params, stim_space, real_data, convolved_stim):
     
     return error
 
+# -------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------
+
 # Pad beginning of stimulus with 8 seconds of zeros (so 800 rows).
 # Padding parameters = (before, after)
 x_pad = (800, 600)
@@ -102,6 +117,11 @@ if sanity_check:
     print(f"Shape is {c_tr.shape}.")
     print(f"There are {c_tr.shape[0]} trials.")
 
+# -------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------
+
 # Load brain data
 
 brain_path = op.join(base_path, "..", "..", "AMPB", "data",subject_id, "ses-02", "func", (subject_id + "_ses-02_task-ampb_run-1_bold.nii.gz"))
@@ -110,11 +130,11 @@ bold_data = bold_img.get_fdata()
 print(f"Shape of brain data is {bold_data.shape}.")
 
 # Generate voxel coordinate grid
-x_start = 1
-x_end = 72
+x_start = 40
+x_end = 50
 
-y_start = 1
-y_end = 72
+y_start = 20
+y_end = 30
 
 z_start = 21
 z_end = 22
@@ -122,27 +142,23 @@ z_end = 22
 z_total = 48
 z_new_start = 10
 
+
+# --------------------------------------------------------------------
+
+x_coords = np.arange(x_start, x_end)
+y_coords = np.arange(y_start, y_end)
+
+xv, yv = np.meshgrid(x_coords, y_coords, indexing='ij')
+
+grid_coords = np.vstack([xv.flatten(), yv.flatten()]).T
+
+total_voxel = grid_coords.shape[0]
+
+stim_space = np.linspace(-30, 30, 9)
+
 tic = time.time()
 for z_coord in range(z_new_start, z_total):
-    x_coords = np.arange(x_start, x_end)
-    y_coords = np.arange(y_start, y_end)
-
-    xv, yv = np.meshgrid(x_coords, y_coords, indexing='ij')
-
-    grid_coords = np.vstack([xv.flatten(), yv.flatten()]).T
-
-    total_voxel = grid_coords.shape[0]
     done_voxel  = 0
-
-    # Generate mu / sigma grid
-
-    stim_space = np.linspace(-30, 30, 9)
-
-
-    # mus    = np.arange(-21, 20, 2)
-    # sigmas = np.arange(-21, 20, 2)
-
-
     all_results = []
 
     for coord in grid_coords: # for each coordinate in voxel grid
@@ -247,3 +263,8 @@ print(f"Finished computing for all voxels. Time taken: {toc - tic} seconds.")
 
 
 
+## Thoughts for shortening runtime
+# - Decrease range in grid search
+# - Increase step size in grid search
+# - Decrease voxel range
+# - Flatten voxels (need to figure out how to still save out coordinates when doing this)
