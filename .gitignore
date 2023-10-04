@@ -45,4 +45,8 @@ test.py
 testing_masking.py
 plot_brain.py
 __pycache__/
+sample_rois.py
+mean_img/
+rois/
+tmp.ipynb
 
