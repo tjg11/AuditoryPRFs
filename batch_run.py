@@ -1,10 +1,12 @@
 from convolve_hrf import convolve_hrf
 from get_htmls import get_htmls
+from get_rois import get_rois
 import numpy as np
 
 
 run_convolved = False
 run_htmls = True
+run_rois = False
 # Run through all sighted particpants and run numbers to get all PRFs
 
 subject_ids = ["sub-NSxGxBAx1970",
@@ -21,7 +23,6 @@ subject_ids = ["sub-NSxGxBAx1970",
                "sub-NSxLxIUx1994",
                "sub-NSxLxPQx1973",
                "sub-NSxLxQFx1997",
-               "sub-NSxLxQUx1953",
                "sub-NSxLxVDx1987",
                "sub-NSxLxVJx1998",
                "sub-NSxLxYKx1964",
@@ -51,6 +52,11 @@ if run_convolved:
 where = "../../AMPB/data"
 
 if run_htmls:
-    for sub, run in all_subruns:
-        print(f"Getting contrast HTML viewer for {sub, run}.")
-        get_htmls(sub, run[1], where, save_nifti=True)
+    for sub in subject_ids:
+        print(f"Getting contrast HTML viewer for {sub}.")
+        get_htmls(sub, 3, where, save_bg_image=True)
+
+if run_rois:
+    for sub in subject_ids:
+        print(f"Getting ROIS for {sub}.")
+        get_rois(sub, target_area=30, p_threshold=0.05)

@@ -1,85 +1,132 @@
-import pickle
 import os
-from nilearn.image import mean_img, concat_imgs
+import pickle
+import difflib
+from os import path as op
+from nilearn.image import resample_img
 import nibabel as nib
-from nilearn import plotting
 import numpy as np
-
-sub_id = "sub-NSxLxIUx1994"
-run_number = "1"
-file_name = os.path.join("zmaps",
-                         sub_id,
-                         f"{sub_id}_run{run_number}_sound-silent.pickle")
-base_path = "../../AMPB/data"
-anat_path = f'{sub_id}_ses-01_task-ptlocal_run-{run_number}_bold.nii.gz'
-anat_path = os.path.join(base_path,
-                         sub_id, 'ses-01',
-                         'func',
-                         anat_path)
-anat_data = nib.load(anat_path)
-mean_image = mean_img(anat_data)
-with open(file_name, "rb") as f:
-    z_map = pickle.load(f)
-
-print(z_map.shape)
-
-x_coord = -49
-y_coord = 20
-z_coord = 27
-
-file_name = os.path.join("niftis",
-                         sub_id,
-                         f"{sub_id}_run{run_number}_sound-silent.nii")
-
-file_name1 = os.path.join("niftis",
-                          sub_id,
-                          f"{sub_id}_run1_sound-silent.nii")
-
-file_name2 = os.path.join("niftis",
-                          sub_id,
-                          f"{sub_id}_run2_sound-silent.nii")
-
-file_name3 = os.path.join("niftis",
-                          sub_id,
-                          f"{sub_id}_run3_sound-silent.nii")
-
-all_zmaps = concat_imgs([file_name1, file_name2, file_name3])
+from skimage.measure import label, regionprops
+from scipy.ndimage import binary_dilation
+import warnings
 
 
-z_map = nib.load(file_name)
-z_data = z_map.get_fdata()
-print(z_data[x_coord][y_coord][z_coord])
-print(z_data.min())
+# Step 1: get data / files
+# Step 2: load data / files
+# Step 2b: things needed - brain mask, segmentation?, zmap, and pvalues
+# Step 3: resample / binarize images that need to be resamples (brain mask)
+# Step 4: get region labels
+# Step 5: apply filters to labels and save coordinates
 
-max_idx = np.unravel_index(np.argmin(z_data), z_data.shape)
 
-plotting.plot_stat_map(
-    all_zmaps,
-    bg_img=mean_image,
-    threshold=3,
-    display_mode="z",
-)
+def get_rois(sub_id,
+             target_area=50,
+             p_threshold=.0001,
+             paths_base=None,
+             paths_main=None,
+             paths_sub=None,
+             save_file=True,
+             ):
 
-plotting.show()
+    warnings.filterwarnings("ignore")
 
-print(max_idx, z_data[max_idx])
+    # set base, main, and sub paths
+    if paths_base is None:
+        paths_base = op.join("C:\\",
+                             "Users",
+                             "Taylor Garrison",
+                             "OneDrive - UW")
+    if paths_main is None:
+        paths_main = op.join(paths_base,
+                             "Scripts",
+                             "PythonScripts")
+    if paths_sub is None:
+        paths_sub = op.join(paths_base,
+                            "AMPB",
+                            "data",
+                            "derivatives",
+                            "fmriprep",
+                            sub_id,
+                            "ses-01",
+                            "anat")
 
-# regions_value_img, index = connected_regions(
-#     z_map, min_region_size=200
-# )
-# plotting.plot_stat_map(
-#                 z_map,
-#                 bg_img=mean_image,
-#                 threshold=2.0,
-#                 display_mode="z",
-#                 cut_coords=4,
+    # set data paths
+    paths_data_zmaps = op.join(paths_main, "zmaps", sub_id)
+    paths_data_pvalue = op.join(paths_main, "niftis", sub_id)
 
-#              )
-# plotting.plot_prob_atlas(
-#     regions_value_img,
-#     bg_img=mean_image,
-#     view_type="contours",
-#     display_mode="z",
-#     cut_coords=5,
-#     )
-# plotting.show()
+    # load z-maps with original data
+    f_name = op.join(paths_data_zmaps,
+                     f"{sub_id}_sound-silent.nii")
+    z_maps = nib.load(f_name).get_fdata()
+    o_data = nib.load(f_name)  # non-loaded data for resampling params
+
+    # load brain mask and resample
+    file_text = "ses-01_acq-MEMPRvNav_rec-RMS_desc-brain_mask.nii.gz"
+    f_name = op.join(paths_sub,
+                     f"{sub_id}_{file_text}")
+    if op.exists(f_name):
+        print("Brain mask file exists!")
+    else:
+        print(f"\n{f_name}")
+        new_base = op.abspath(os.path.join("..", "..", "AMPB", "data"))
+        print(f"\n{new_base}")
+        paths_sub = op.join(new_base,
+                            "derivatives",
+                            "fmriprep",
+                            sub_id,
+                            "ses-01",
+                            "anat")
+        new_f_name = op.join(paths_sub, f"{sub_id}_{file_text}")
+        print(f"\n{new_f_name}")
+        print(op.exists(new_f_name))
+        print("Brain mask file not found!")
+        print(len(f_name))
+        print(len(new_f_name))
+        print("are the two paths the same???")
+        print(f_name)
+        print(new_f_name)
+        print(f"{new_f_name == f_name}")
+        print(repr(new_f_name))
+        print('\n'.join(difflib.ndiff([f_name], [new_f_name])))
+        return
+    ob_mask = nib.load(f_name)  # original mask
+    rb_mask = resample_img(ob_mask,
+                           target_affine=o_data.affine,
+                           target_shape=o_data.shape)  # resampled b_mask
+    bin_rb_mask = rb_mask != 0  # binarized resampled b_mask
+
+    # load p-values
+    f_name = op.join(paths_data_pvalue,
+                     f"{sub_id}_sound-silent.nii")
+    p_values = nib.load(f_name).get_fdata()
+
+    # threshold z-map using p-values and binarize
+    z_maps[p_values > p_threshold] = 0
+    bin_zmaps = z_maps != 0
+
+    # create  and filter labels based on target area
+    label_image = label(bin_zmaps, connectivity=1)
+    for region in regionprops(label_image):
+        if region.area < target_area:
+            label_image[label_image == region.label] = 0
+
+    # binarize label image, dilate, and apply brain mask
+    bin_label_image = label_image != 0
+    dilated_label_image = binary_dilation(bin_label_image)
+    final_label_image = dilated_label_image * bin_rb_mask
+    vox_count = np.count_nonzero(final_label_image)
+    print(f"Subject [{sub_id}] complete, see voxel count below.")
+    print(f"The number of voxels in the final label image: {vox_count} ")
+
+    # save files
+    if save_file:
+        f_name = op.join("rois",
+                         f"{sub_id}_auditory_roi.pickle")
+    if not op.exists("rois"):
+        os.mkdir("rois")
+    with open(f_name, "wb") as f:
+        pickle.dump(final_label_image, f)
+    return f"Finished [{sub_id}] successfully\n\n"
+
+
+if __name__ == '__main__':
+    print(get_rois("sub-NSxLxYKx1964"))

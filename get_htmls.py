@@ -5,37 +5,38 @@ import numpy as np
 import os
 import nibabel as nib
 from nilearn.image import mean_img
-import pickle
 
 
 def get_htmls(sub_id,
-              run_number,
+              num_runs,
               base_path,
               save_htmls=False,
               save_zmaps=False,
-              save_nifti=False):
-
-    file_name = f'{sub_id}_ses-01_task-ptlocal_run-{run_number}_bold.nii.gz'
-    anat_path = os.path.join(base_path,
-                             sub_id,
-                             'ses-01',
-                             'func',
-                             file_name)
-    if not os.path.exists(anat_path):
-        print(f"Data not found for {anat_path}. Check path or subject data")
-        return
-    data, event_matrix = find_design_matrix(sub_id, run_number)
-    print(data)
+              save_nifti=False,
+              save_bg_image=False):
+    fmri_img = []
+    design_matricies = []
+    for run in range(1, num_runs + 1):
+        r_num = str(run)
+        file_name = f'{sub_id}_ses-01_task-ptlocal_run-{r_num}_bold.nii.gz'
+        anat_path = os.path.join(base_path,
+                                 sub_id,
+                                 'ses-01',
+                                 'func',
+                                 file_name)
+        if not os.path.exists(anat_path):
+            print(
+                f"Data not found for {anat_path}. Check path or subject data")
+            return
+        data = nib.load(anat_path)
+        fmri_img.append(data)
+        data, event_matrix = find_design_matrix(sub_id, r_num)
+        design_matricies.append(event_matrix)
 
     # if not os.path.exists(save_path):
     #     os.makedirs("html_viewers")
-    anat_data = nib.load(anat_path)
-    mean_image = mean_img(anat_data)
+    mean_image = mean_img(fmri_img)
     mask = masking.compute_epi_mask(mean_image)
-
-    # Clean and smooth data
-    # anat_data = image.clean_img(anat_data, standardize=False)
-    # anat_data = image.smooth_img(anat_data, 5.0)
 
     contrast_matrix = np.eye(event_matrix.shape[1])
     b_con = {
@@ -44,8 +45,8 @@ def get_htmls(sub_id,
     }
 
     contrasts = {
-        # "silent-sound":
-        #  b_con["silent"] - (b_con["stationary"] + b_con["motion"]),
+        "silent-sound":
+        b_con["silent"] - (b_con["stationary"] + b_con["motion"]),
         "sound-silent":
         (b_con["stationary"] + b_con["motion"]) - b_con["silent"]
         # "silent-stationary":
@@ -61,8 +62,8 @@ def get_htmls(sub_id,
         signal_scaling=False,
         mask_img=mask,
         minimize_memory=False,)
-    print(anat_data.shape, event_matrix.shape)
-    fmri_glm = fmri_glm.fit(anat_data, design_matrices=event_matrix)
+
+    fmri_glm = fmri_glm.fit(fmri_img, design_matrices=design_matricies)
 
     print("Computing contrasts")
 
@@ -70,10 +71,13 @@ def get_htmls(sub_id,
     for contrast_id, contrast_val in contrasts.items():
         print(f"\tcontrast id: {contrast_id}")
         # compute the contrasts
-        z_map = fmri_glm.compute_contrast(contrast_val, output_type="z_score")
+        z_map = fmri_glm.compute_contrast(contrast_val,
+                                          output_type="z_score")
+        p_values = fmri_glm.compute_contrast(contrast_val,
+                                             output_type="p_value")
         html = plotting.view_img(z_map, bg_img=mean_image, threshold=2.5)
         if save_htmls:
-            file_name = f"{sub_id}_run{run_number}_{contrast_id}.html"
+            file_name = f"{sub_id}_{contrast_id}.html"
             file_name = os.path.join("html_viewers", sub_id, file_name)
             if not os.path.exists("html_viewers"):
                 os.mkdir("html_viewers")
@@ -81,20 +85,30 @@ def get_htmls(sub_id,
                 os.mkdir(os.path.join("html_viewers", sub_id))
             html.save_as_html(file_name)
         if save_zmaps:
-            file_name = f"{sub_id}_run{run_number}_{contrast_id}.pickle"
+            file_name = f"{sub_id}_{contrast_id}.nii"
             file_name = os.path.join("zmaps", sub_id, file_name)
             if not os.path.exists("zmaps"):
                 os.mkdir("zmaps")
             if not os.path.exists(os.path.join("zmaps", sub_id)):
                 os.mkdir(os.path.join("zmaps", sub_id))
-            with open(file_name, "wb") as f:
-                pickle.dump(z_map, f)
+            nib.save(z_map, file_name)
 
         if save_nifti:
-            file_name = f"{sub_id}_run{run_number}_{contrast_id}.nii"
+            file_name = f"{sub_id}_{contrast_id}.nii"
             file_name = os.path.join("niftis", sub_id, file_name)
             if not os.path.exists("niftis"):
                 os.mkdir("niftis")
             if not os.path.exists(os.path.join("niftis", sub_id)):
                 os.mkdir(os.path.join("niftis", sub_id))
-            nib.save(z_map, file_name)
+            nib.save(p_values, file_name)
+
+        if save_bg_image:
+            if not os.path.exists("mean_img"):
+                os.mkdir("mean_img")
+            file_name = os.path.join("mean_img", f"{sub_id}_mean_img.nii")
+            nib.save(mean_image, file_name)
+
+
+if __name__ == '__main__':
+    where = os.path.abspath(os.path.join("..", "..", "AMPB", "data"))
+    get_htmls('sub-NSxLxYKx1964', 3, where, save_zmaps=True)
