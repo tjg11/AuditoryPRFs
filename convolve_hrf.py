@@ -27,6 +27,8 @@ def convolve_hrf(
     tau = hrf_params["tau"]
     n = hrf_params["n"]
 
+    #TODO: pre- and post- convolution interpolating, under assumption that the 
+    # stimulus image is created at the same time resolution
     th = np.arange(0, 30, dt)
 
     t_delta = th - delta  # shift time vector for lag
@@ -48,8 +50,12 @@ def convolve_hrf(
         arr=S
     )
 
+    #TODO: if save_pickle
     print(C.shape)
     img_name = f"convolved_{subject_id}_{run_number}.pickle"
     img_name = op.join(subject_id, img_name)
     with open(img_name, "wb") as f:
         pickle.dump(C, f)
+    
+    #TODO: return the convolved stimulus
+

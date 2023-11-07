@@ -131,9 +131,7 @@ def find_min(convolved_stim,
 # ---------------------
 def find_prf(subject_id,
              ses_number,
-             x_start_end=(0, 0),
-             y_start_end=(0, 0),
-             z_start_end=(0, 0),
+             mask=None,
              x_padding=(0, 0),
              y_padding=(0, 0)):
 
@@ -184,7 +182,7 @@ def find_prf(subject_id,
         print(f"Shape is {c_tr.shape}.")
         print(f"There are {c_tr.shape[0]} trials.")
 
-    # Load brain data
+    # Load brain data #TODO: CHANGE TO DERIVATIVES
     brain_file = (f"_task-ampb_run-{ses_number[1]}_bold.nii.gz")
     brain_path = op.join(base_path,
                          "..",
@@ -194,40 +192,28 @@ def find_prf(subject_id,
                          subject_id,
                          "ses-02",
                          "func",
-                         subject_id,
-                         "_ses-02",
-                         brain_file)
+                         f"{subject_id}_ses-02{brain_file}")
     bold_img = nib.load(brain_path)
     bold_data = bold_img.get_fdata()
     print(f"Shape of brain data is {bold_data.shape}.")
 
-    # Generate voxel coordinate grid
+    # This part should now mask the data given a mask
+    if mask is not None:
+        with open(mask, "rb") as f:
+            brain_mask = pickle.load(f)
+        for slice in range(bold_data.shape[3]):
+            bold_data[:, :, :, slice] = bold_data[:, :, :, slice] * brain_mask
+    print(f"SHAPE IS {bold_data.shape} ")
 
-    x, y, z, tc = bold_data.shape
-    x_start, x_end = x_start_end
-    if x_start_end == (0, 0):
-        x_start = 1
-        x_end = x
+    # Generate list of coords to analyze
+    x, y, z = np.nonzero(brain_mask)
+    coords = []
+    for idx in range(len(x)):
+        coords.append((x[idx], y[idx], z[idx]))
 
-    y_start, y_end = y_start_end
-    if y_start_end == (0, 0):
-        y_start = 1
-        y_end = y
-
-    z_start, z_end = z_start_end
-    if z_start_end == (0, 0):
-        z_start = 1
-        z_end = z
-
-    x_p = np.arange(x_start, x_end)
-    y_p = np.arange(y_start, y_end)
-    z_p = np.arange(z_start, z_end)
-    print(x_p, y_p, z_p)
-    coords = np.vstack(np.meshgrid(x_p, y_p, z_p)).reshape(3, -1).T
-
-    error_results = np.zeros((x, y, z))
-    mu_results = np.zeros((x, y, z))
-    sigma_results = np.zeros((x, y, z))
+    error_results = np.zeros((brain_mask.shape))
+    mu_results = np.zeros((brain_mask.shape))
+    sigma_results = np.zeros((brain_mask.shape))
 
     # error_results = mu_results = sigma_results = np.zeros((x, y, z))
     # shallow vs. deep copy of the variable, check
@@ -242,7 +228,9 @@ def find_prf(subject_id,
     stim_space = np.linspace(-30, 30, 9)
 
     voxels_done = 0
-    voxels_total = coords.shape[0]
+    voxels_total = len(coords)
+    print(f"There are {voxels_total} voxels to be analyzed.")
+    print("Check this against the number of voxels in the mask.")
 
     tic = time.time()
 
@@ -258,13 +246,17 @@ def find_prf(subject_id,
         print(f"\n-----Starting for {x, y, z} voxel------\n")
 
         # Determine best seed
-        seed_mu, seed_sigma = find_min(c_tr,
-                                       stim_space,
-                                       all_params,
-                                       voxel,
-                                       mus,
-                                       sigmas,
-                                       error_matrix)
+        try:
+            seed_mu, seed_sigma = find_min(
+                c_tr,
+                stim_space,
+                all_params,
+                voxel,
+                mus,
+                sigmas,
+                error_matrix)
+        except TypeError:
+            seed_mu, seed_sigma = 0, 0
 
         # Create new grid based on best seed
         best_mus = np.arange(seed_mu - 3, seed_mu + 3, 1)
@@ -330,9 +322,9 @@ def find_prf(subject_id,
 
 
 if __name__ == '__main__':
-    print(find_prf("sub-EBxGxCCx1986",
+    print(find_prf("sub-NSxGxHKx1965",
                    "02",
-                   x_start_end=(45, 61),
-                   y_start_end=(20, 36),
-                   z_start_end=(20, 31),
+                   op.join("rois",
+                           "sub-NSxGxHKx1965",
+                           "sub-NSxGxHKx1965_tarea25.0_p0.05_roi.pickle"),
                    x_padding=(800, 600)))

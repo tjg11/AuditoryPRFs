@@ -4,6 +4,7 @@ from os import path as op
 import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nib
+import matplotlib as mpl
 from scipy.stats import pearsonr
 from scipy.optimize import minimize
 from sklearn.metrics import mean_squared_error
@@ -16,7 +17,7 @@ import os
 
 scaled_zero = False
 # Pick a subject
-subject_id = "sub-EBxGxCCx1986"
+subject_id = "sub-NSxGxHKx1965"
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,20 +27,20 @@ bold_data = bold_img.get_fdata()
 print(f"Shape of brain data is {bold_data.shape}.")
 
 time_point = 100
-z_slice1 = 20
+z_slice1 = 25
 z_slice2 = 25
 z_slice3 = 27
 z_slice4 = 30
 
-slice1 = bold_data[ :, :, z_slice1, time_point]
-slice2 = bold_data[ :, :, z_slice2, time_point]
-slice3 = bold_data[ :, :, z_slice3, time_point]
-slice4 = bold_data[ :, :, z_slice4, time_point]
+slice1 = bold_data[:, :, z_slice1, time_point]
+slice2 = bold_data[:, :, z_slice2, time_point]
+slice3 = bold_data[:, :, z_slice3, time_point]
+slice4 = bold_data[:, :, z_slice4, time_point]
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
-img_name = op.join(base_path, f"prf_results_{subject_id}_updated_function.pickle")
-# img_name = op.join(base_path, f"prf_results_{subject_id}_final.pickle")
+# img_name = op.join(base_path, f"prf_results_{subject_id}_updated_function.pickle")
+img_name = op.join(base_path, f"prf_results_{subject_id}_final.pickle")
 
 # x_start = 1
 # x_end = 71
@@ -61,25 +62,12 @@ img_name = op.join(base_path, f"prf_results_{subject_id}_updated_function.pickle
 # print(x_ax, y_ax, x_ax * y_ax)
 with open(img_name, "rb") as f:
     results = pickle.load(f)
-
-# for voxel in results:
-#     print(voxel["error"])
-
-# print(len(results) / 2)
-# for voxel in results:
-#     if scaled_zero:
-#         # plot scaled to zero
-#         x_coord = voxel["voxel"][0] - x_start
-#         y_coord = voxel["voxel"][1] - y_start
-#     else:
-#         # plot same scale as image
-#         x_coord = voxel["voxel"][0]
-#         y_coord = voxel["voxel"][1]
-
-#     error_values[x_coord][y_coord] = voxel["error"]
 print(results.keys())
-error_values = results["mus"]
-print(error_values)
+error_values = results["error"]
+print(error_values.shape)
+print(np.max(error_values), np.min(error_values))
+plt.plot(error_values.flatten())
+plt.show()
 
 # print(error_values[:, :, z_slice])
 
@@ -101,8 +89,12 @@ print(error_values)
 
 # plt.show()
 
+# set zero values 
+cmap = mpl.cm.get_cmap('jet').copy()
+cmap.set_under(color='grey')
+
 plt.imshow(slice1, cmap='Greys')
-plt.imshow(error_values[:, :, z_slice1], cmap='jet', interpolation='nearest', vmin=-40, vmax=40, alpha=0.75)
+plt.imshow(error_values[:, :, z_slice1], cmap=cmap, vmin=0.0000000000001, interpolation='nearest', alpha=0.75)
 plt.colorbar()
 plt.show()
 
