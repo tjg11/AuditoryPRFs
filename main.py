@@ -1,6 +1,6 @@
-from convolve_hrf import convolve_hrf
-from get_htmls import get_htmls
-from get_rois import get_rois
+from utils.convolve_hrf import convolve_hrf
+from utils.get_htmls import get_htmls
+from utils.get_rois import get_rois
 import numpy as np
 
 
