@@ -300,11 +300,11 @@ def stimulus_creation(path: str,
                       save_bin: bool = True,
                       save_val: bool = True) -> list:
     """Creates Python compatable stimulus design from .mat files.
-    Takes path to subject data and stimulus space representation as a parameter. Path should contain
-    .mat files generated from trials containing stimulus information.
-    Stimulus design can be saved as a figure, a file containing the stimulus
-    represented in binary, and/or a file containing the stimulus in its
-    original values. Returns stimulus created."""
+    Takes path to subject data and stimulus space representation as a
+    parameter. Path should contain .mat files generated from trials containing
+    stimulus information. Stimulus design can be saved as a figure, a file
+    containing the stimulus represented in binary, and/or a file containing the
+    stimulus in its original values. Returns stimulus created."""
 
     # get matfiles
     matfiles = get_matfiles(path)
