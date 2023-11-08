@@ -7,6 +7,7 @@ import numpy as np
 run_convolved = False
 run_htmls = False
 run_rois = True
+get_stimuli = True
 # Run through all sighted particpants and run numbers to get all PRFs
 
 subject_ids = ["sub-NSxGxBAx1970",
