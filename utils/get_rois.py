@@ -41,6 +41,8 @@ def get_rois(sub_id,
         paths_main = op.join(paths_base,
                              "Scripts",
                              "PythonScripts")
+    # TODO: Change this path to functional data so that it matches
+    # the shape
     if paths_sub is None:
         paths_sub = op.join(paths_base,
                             "AMPB",
@@ -56,6 +58,7 @@ def get_rois(sub_id,
     paths_data_pvalue = op.join(paths_main, "niftis", sub_id)
 
     # load z-maps with original data and check for file not found
+    # TODO: this might also need to be changed........... :(
     f_name = op.join(paths_data_zmaps,
                      f"{sub_id}_sound-silent.nii")
     if op.exists(f_name):
