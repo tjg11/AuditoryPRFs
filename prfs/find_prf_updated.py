@@ -27,35 +27,6 @@ plot_timecourses = True
 print_status = False
 # -------------------------------------------------------------------
 
-# -------------------------------------------------------------------
-# Pick a subject
-subject_id = "sub-EBxGxCCx1986"
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# Load one data file
-# For analyzing specific files
-
-base_path = os.path.dirname(os.path.abspath(__file__))
-img_name = op.join(base_path,
-                   subject_id,
-                   ("convolved_" + subject_id + "_1.pickle"))
-with open(img_name, "rb") as f:
-    loaded_record = pickle.load(f)
-
-# Sanity check the loaded file
-if sanity_check:
-    print(
-        f"""Total length of run should be 416 seconds and total rows per second
-        should be 100. Shape should be 41600, 9.")
-        Shape is: {loaded_record.shape}.
-        Total length of run: {loaded_record.shape[0] / 100} seconds.
-        Total rows per second: {loaded_record.shape[0] / 416} rows.""")
-
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-
 
 # Generate gaussian function
 def generate_gaussian(x, b, c):
@@ -134,11 +105,20 @@ def find_prf(subject_id,
              mask=None,
              x_padding=(0, 0),
              y_padding=(0, 0)):
+    # TODO: change to be generalizeable
+    base_path = os.path.join(
+        "C:\\",
+        "Users",
+        "Taylor Garrison",
+        "OneDrive - UW"
+        )
+    img_name = op.join(
+        base_path,
+        "Scripts",
+        "PythonScripts",
+        subject_id,
+        f"convolved_{subject_id}_{ses_number}.pickle")
 
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    img_name = op.join(base_path,
-                       subject_id,
-                       f"convolved_{subject_id}_{ses_number}.pickle")
     with open(img_name, "rb") as f:
         loaded_record = pickle.load(f)
 
@@ -182,17 +162,18 @@ def find_prf(subject_id,
         print(f"Shape is {c_tr.shape}.")
         print(f"There are {c_tr.shape[0]} trials.")
 
-    # Load brain data #TODO: CHANGE TO DERIVATIVES
-    brain_file = (f"_task-ampb_run-{ses_number[1]}_bold.nii.gz")
-    brain_path = op.join(base_path,
-                         "..",
-                         "..",
-                         "AMPB",
-                         "data",
-                         subject_id,
-                         "ses-02",
-                         "func",
-                         f"{subject_id}_ses-02{brain_file}")
+    # Load brain data [CHANGED TO DERIVATIVES]
+    bf = (f"_task-ampb_run-{ses_number[1]}_space-T1w_desc-preproc_bold.nii.gz")
+    brain_path = op.join(
+        base_path,
+        "AMPB",
+        "data",
+        "derivatives",
+        "fmriprep",
+        subject_id,
+        "ses-02",
+        "func",
+        f"{subject_id}_ses-02{bf}")
     bold_img = nib.load(brain_path)
     bold_data = bold_img.get_fdata()
     print(f"Shape of brain data is {bold_data.shape}.")
@@ -324,7 +305,14 @@ def find_prf(subject_id,
 if __name__ == '__main__':
     print(find_prf("sub-NSxGxHKx1965",
                    "02",
-                   op.join("rois",
-                           "sub-NSxGxHKx1965",
-                           "sub-NSxGxHKx1965_tarea25.0_p0.05_roi.pickle"),
+                   op.join(
+                    "C:\\",
+                    "Users",
+                    "Taylor Garrison",
+                    "OneDrive - UW",
+                    "Scripts",
+                    "PythonScripts",
+                    "rois",
+                    "sub-NSxGxHKx1965",
+                    "sub-NSxGxHKx1965_tarea25.0_p0.05_roi.pickle"),
                    x_padding=(800, 600)))
