@@ -5,6 +5,8 @@
 # Version 2.0 of find_prf with better time complexity (ideally O(n^2))
 
 from os import path as op
+from pathlib import Path
+from dotenv import load_dotenv
 import numpy as np
 import nibabel as nib
 from scipy.stats import pearsonr
@@ -105,13 +107,11 @@ def find_prf(subject_id,
              mask=None,
              x_padding=(0, 0),
              y_padding=(0, 0)):
+    # load environment variables
+    load_dotenv()
     # TODO: change to be generalizeable
-    base_path = os.path.join(
-        "C:\\",
-        "Users",
-        "Taylor Garrison",
-        "OneDrive - UW"
-        )
+    base_path = Path(os.getenv('BASE_PATH'))
+    print(base_path)
     img_name = op.join(
         base_path,
         "Scripts",
@@ -119,6 +119,7 @@ def find_prf(subject_id,
         subject_id,
         f"convolved_{subject_id}_{ses_number}.pickle")
 
+    print(img_name)
     with open(img_name, "rb") as f:
         loaded_record = pickle.load(f)
 
@@ -308,7 +309,7 @@ if __name__ == '__main__':
                    op.join(
                     "C:\\",
                     "Users",
-                    "Taylor Garrison",
+                    "tayja",
                     "OneDrive - UW",
                     "Scripts",
                     "PythonScripts",

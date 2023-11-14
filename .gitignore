@@ -49,4 +49,5 @@ sample_rois.py
 mean_img/
 rois/
 tmp.ipynb
+.env
 
