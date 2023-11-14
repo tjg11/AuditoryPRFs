@@ -304,16 +304,16 @@ def find_prf(subject_id,
 
 
 if __name__ == '__main__':
-    print(find_prf("sub-NSxGxHKx1965",
+    print(find_prf("sub-NSxLxYKx1964",
                    "02",
                    op.join(
                     "C:\\",
                     "Users",
                     "tayja",
                     "OneDrive - UW",
-                    "Scripts",
-                    "PythonScripts",
+                    "PRFs",
+                    "data",
+                    "sub-NSxLxYKx1964",
                     "rois",
-                    "sub-NSxGxHKx1965",
-                    "sub-NSxGxHKx1965_tarea25.0_p0.05_roi.pickle"),
+                    "sub-NSxLxYKx1964_tarea50_p0.0001_roi.pickle"),
                    x_padding=(800, 600)))

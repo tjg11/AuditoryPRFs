@@ -1,7 +1,6 @@
 import os
 import pickle
 from os import path as op
-from nilearn.image import resample_img
 import nibabel as nib
 import numpy as np
 import pandas as pd
@@ -35,12 +34,12 @@ def get_rois(sub_id,
     if paths_base is None:
         paths_base = op.join("C:\\",
                              "Users",
-                             "Taylor Garrison",
+                             "tayja",
                              "OneDrive - UW")
     if paths_main is None:
         paths_main = op.join(paths_base,
-                             "Scripts",
-                             "PythonScripts")
+                             "PRFs",
+                             "data")
     # TODO: Change this path to functional data so that it matches
     # the shape
     if paths_sub is None:
@@ -54,8 +53,8 @@ def get_rois(sub_id,
                             "func")
 
     # set data paths
-    paths_data_zmaps = op.join(paths_main, "zmaps", sub_id)
-    paths_data_pvalue = op.join(paths_main, "niftis", sub_id)
+    paths_data_zmaps = op.join(paths_main, sub_id, "contrast_zmaps")
+    paths_data_pvalue = op.join(paths_main, sub_id, "contrast_niftis")
 
     # load z-maps with original data and check for file not found
     # TODO: this might also need to be changed........... :(
@@ -67,10 +66,10 @@ def get_rois(sub_id,
         print("Z-map file doesn't exist! Check the path for errors.")
         return
     z_maps = nib.load(f_name).get_fdata()
-    o_data = nib.load(f_name)  # non-loaded data for resampling params
+    # o_data = nib.load(f_name)  # non-loaded data for resampling params
 
     # load brain mask and resample and check for file not found
-    file_text = "ses-01_acq-MEMPRvNav_rec-RMS_desc-brain_mask.nii.gz"
+    file_text = "ses-01_task-ptlocal_run-1_space-T1w_desc-brain_mask.nii.gz"
     f_name = op.join(paths_sub,
                      f"{sub_id}_{file_text}")
     if op.exists(f_name):
@@ -78,26 +77,28 @@ def get_rois(sub_id,
     else:
         print("Brain mask file doesn't exist! Check the path for errors.")
         return
-    ob_mask = nib.load(f_name)  # original mask
-    rb_mask = resample_img(ob_mask,
-                           target_affine=o_data.affine,
-                           target_shape=o_data.shape)  # resampled b_mask
+    rb_mask = nib.load(f_name)  # original mask
+    # TODO: See if this really needs to be resampled now
+    # rb_mask = resample_img(ob_mask,
+    #                        target_affine=o_data.affine,
+    #                        target_shape=o_data.shape)  # resampled b_mask
     bin_rb_mask = rb_mask != 0  # binarized resampled b_mask
 
     # load segmentation and resample
-    file_text = f"{sub_id}_ses-01_acq-MEMPRvNav_rec-RMS_desc-aseg_dseg.nii.gz"
+    file_text = f"{sub_id}_ses-01_task-ptlocal_run-1_space-T1w_desc-aseg_dseg.nii.gz"
     f_name = op.join(paths_sub,
                      file_text)
     if op.exists(f_name):
         print("Segmentation file exists!")
     else:
         print("Segmentation file does not exist. Check for path errors.")
-    oseg = nib.load(f_name)
-    rseg = resample_img(
-        oseg,
-        target_affine=o_data.affine,
-        target_shape=o_data.shape
-    )
+    # TODO: See if this actually needs to be resampled
+    rseg = nib.load(f_name)
+    # rseg = resample_img(
+    #     oseg,
+    #     target_affine=o_data.affine,
+    #     target_shape=o_data.shape
+    # )
     rseg = rseg.get_fdata().astype(int)
 
     # load segmentation legend and find target indicies based on seg_areas
@@ -160,13 +161,12 @@ def get_rois(sub_id,
     # save files
     if save_file:
         file_text = f"{sub_id}_tarea{target_area}_p{p_threshold}_roi.pickle"
-        f_name = op.join("rois",
+        f_path = op.join(paths_main,
                          sub_id,
-                         file_text)
-    if not op.exists("rois"):
-        os.mkdir("rois")
-    if not op.exists(op.join("rois", sub_id)):
-        os.mkdir(op.join("rois", sub_id))
+                         "rois")
+        f_name = op.join(f_path, file_text)
+    if not op.exists(f_path):
+        os.mkdir(f_path)
     with open(f_name, "wb") as f:
         pickle.dump(final_label_image, f)
     return f"Finished [{sub_id}] successfully\n\n"
