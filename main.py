@@ -2,6 +2,8 @@ from utils.convolve_hrf import convolve_hrf
 from utils.get_htmls import get_htmls
 from utils.get_rois import get_rois
 import numpy as np
+from os import getenv
+from dotenv import load_dotenv
 
 
 run_convolved = False
@@ -9,25 +11,8 @@ run_htmls = False
 run_rois = True
 get_stimuli = True
 # Run through all sighted particpants and run numbers to get all PRFs
-
-subject_ids = ["sub-NSxGxBAx1970",
-               "sub-NSxGxBYx1981",
-               "sub-NSxGxHKx1965",
-               "sub-NSxGxHNx1952",
-               "sub-NSxGxIFx1991",
-               "sub-NSxGxNXx1990",
-               "sub-NSxGxRFx1978",
-               "sub-NSxGxXJx1998",
-               "sub-NSxGxYRx1992",
-               "sub-NSxLxATx1954",
-               "sub-NSxLxBNx1985",
-               "sub-NSxLxIUx1994",
-               "sub-NSxLxPQx1973",
-               "sub-NSxLxQFx1997",
-               "sub-NSxLxVDx1987",
-               "sub-NSxLxVJx1998",
-               "sub-NSxLxYKx1964",
-               "sub-NSxLxYNx1999"]
+load_dotenv()
+subject_ids = getenv('SUB_IDS')
 
 run_numbers = ["01", "02", "03", "04", "05", "06"]
 
