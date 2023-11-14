@@ -51,7 +51,7 @@ def get_rois(sub_id,
                             "fmriprep",
                             sub_id,
                             "ses-01",
-                            "anat")
+                            "func")
 
     # set data paths
     paths_data_zmaps = op.join(paths_main, "zmaps", sub_id)
