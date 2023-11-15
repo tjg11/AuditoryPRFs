@@ -55,8 +55,12 @@ def error_function(params, stim_space, real_data, convolved_stim):
     pred = prediction_function(model, convolved_stim)
 
     # Normalize real data and pred data - move normalization of real data
-    if np.amax(pred) != np.amin(pred):
-        pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
+    pred = np.array(pred)
+
+    # normalize using z-score method
+    pred = (pred - pred.mean()) / pred.std()
+    # if np.amax(pred) != np.amin(pred):
+    #     pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
 
     # Calculate MSE
     error = mean_squared_error(pred, real_data)
@@ -220,10 +224,10 @@ def find_prf(subject_id,
 
         # Set timecourse
         x, y, z = coord
-        voxel = bold_data[x, y, z, :]
-        min_voxel = (voxel - np.amin(voxel))
-        max_voxel = (np.amax(voxel) - np.amin(voxel))
-        norm_voxel = min_voxel / max_voxel
+        voxel = np.array(bold_data[x, y, z, :])
+        # min_voxel = (voxel - np.amin(voxel))
+        # max_voxel = (np.amax(voxel) - np.amin(voxel))
+        norm_voxel = (voxel - voxel.mean()) / voxel.std()
 
         print(f"\n-----Starting for {x, y, z} voxel------\n")
 
