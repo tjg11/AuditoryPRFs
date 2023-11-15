@@ -16,6 +16,7 @@ import pickle
 import scipy
 import time
 import os
+import matplotlib.pyplot as plt
 
 print("\n+-------------Script Starts Here-------------+\n")
 
@@ -57,13 +58,27 @@ def error_function(params, stim_space, real_data, convolved_stim):
     # Normalize real data and pred data - move normalization of real data
     pred = np.array(pred)
 
-    # normalize using z-score method
-    pred = (pred - pred.mean()) / pred.std()
+    # normalize using z-score method (if pred std doesn't equal 0)
+    if pred.std() != 0:
+        pred = (pred - pred.mean()) / pred.std()
     # if np.amax(pred) != np.amin(pred):
     #     pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
 
     # Calculate MSE
-    error = mean_squared_error(pred, real_data)
+    # check for nan in prediction timecourse
+    if np.isnan(np.sum(pred)):
+        print("NAN IN PREDICTION DATA")
+    # check for nan in real data
+    if np.isnan(np.sum(real_data)):
+        print("NAN IN REAL DATA")
+        print(np.any(np.isnan(real_data)))
+        print(np.count_nonzero(np.isnan(real_data)))
+        plt.plot(real_data)
+        plt.show()
+        plt.plot(pred)
+        plt.show()
+    # THIS WAS IN THE WRONG ORDER????
+    error = mean_squared_error(real_data, pred)
 
     return error
 
@@ -227,7 +242,10 @@ def find_prf(subject_id,
         voxel = np.array(bold_data[x, y, z, :])
         # min_voxel = (voxel - np.amin(voxel))
         # max_voxel = (np.amax(voxel) - np.amin(voxel))
-        norm_voxel = (voxel - voxel.mean()) / voxel.std()
+        if voxel.std() != 0:
+            norm_voxel = (voxel - voxel.mean()) / voxel.std()
+        else:
+            norm_voxel = voxel
 
         print(f"\n-----Starting for {x, y, z} voxel------\n")
 
@@ -313,7 +331,7 @@ if __name__ == '__main__':
                    op.join(
                     "C:\\",
                     "Users",
-                    "tayja",
+                    "Taylor Garrison",
                     "OneDrive - UW",
                     "PRFs",
                     "data",

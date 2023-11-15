@@ -26,7 +26,7 @@ def plot_results(subject_id,
         subject_id,
         "ses-02",
         "func",
-        (subject_id + "_ses-02_task-ampb_run-1_bold.nii.gz"))
+        (subject_id + "_ses-02_task-ampb_run-2_bold.nii.gz"))
     bold_img = nib.load(brain_path)
     time.sleep(10)
     bold_data = bold_img.get_fdata()
