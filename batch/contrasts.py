@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 def get_contrasts():
     """Uses environment variables to create and save contrast maps for each
-    subject. Returns the number of maps created."""
+    subject. Returns the number of maps created. NOT FINISHED"""
 
     # load environment variables
     load_dotenv()
