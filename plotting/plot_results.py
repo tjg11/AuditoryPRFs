@@ -1,11 +1,11 @@
 import numpy as np
 from os import path as op
+from dotenv import load_dotenv
 import matplotlib.pyplot as plt
 import nibabel as nib
 import matplotlib as mpl
 import pickle
 import os
-import time
 
 
 def plot_results(subject_id,
@@ -13,22 +13,29 @@ def plot_results(subject_id,
                  focus_result="error",
                  check=True):
 
-    # set base path
-    base_path = os.path.dirname(os.path.abspath(__file__))
+    # load environment variables
+    load_dotenv()
+
+    # set prf data path
+    prf_path = os.getenv("DATA_PATH")
+    prf_path = op.join(
+        prf_path,
+        subject_id,
+        "prfs"
+    )
 
     # set brain data path and load
+    bf = ("_task-ampb_run-2_space-T1w_desc-preproc_bold.nii.gz")
+    brain_path = os.getenv("ORIG_PATH")
     brain_path = op.join(
-        base_path,
-        "..",
-        "..",
-        "AMPB",
-        "data",
+        brain_path,
+        "fmriprep",
         subject_id,
         "ses-02",
         "func",
-        (subject_id + "_ses-02_task-ampb_run-1_bold.nii.gz"))
+        f"{subject_id}_ses-02{bf}"
+    )
     bold_img = nib.load(brain_path)
-    time.sleep(10)
     bold_data = bold_img.get_fdata()
     print(f"Shape of brain data is {bold_data.shape}.")
 
@@ -39,11 +46,19 @@ def plot_results(subject_id,
     slice1 = bold_data[:, :, z_slice, time_point]
 
     # get PRF results
-    img_name = op.join(base_path, f"prf_results_{subject_id}_final.pickle")
+    img_name = op.join(prf_path, f"prf_results_{subject_id}_final.pickle")
+
+    # convert to nifti
+    out_name = op.join(prf_path, "results.nii")
 
     # load results and print keys
     with open(img_name, "rb") as f:
         results = pickle.load(f)
+
+    # convert to nifti and save
+    print(out_name)
+    img = nib.Nifti1Image(results[focus_result], np.eye(4))
+    nib.save(img, out_name)
 
     if check:
         print("Keys in results file should be ['error', 'mus', 'sigmas'].")
@@ -96,4 +111,4 @@ def plot_results(subject_id,
 
 
 if __name__ == "__main__":
-    plot_results("sub-NSxGxHKx1965", 25, focus_result="error")
+    plot_results("sub-NSxLxYKx1964", 25, focus_result="mus")

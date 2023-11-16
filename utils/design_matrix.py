@@ -17,7 +17,15 @@ def find_design_matrix(sub_id, run_number):
     time_vector = np.arange(n_volumes) * tr
 
     # base_path = os.path.abspath("OneDrive - UW/AMPB/data/")
-    base_path = "../../AMPB/data"
+    # TODO: Change this to be interchangeable
+    base_path = os.path.join(
+        "C:\\",
+        "Users",
+        "tayja",
+        "OneDrive - UW",
+        "AMPB",
+        "data"
+    )
     data_name = f'{sub_id}_ses-01_task-ptlocal_run-{run_number}_events.tsv'
     data_path = os.path.join(base_path,
                              sub_id,

@@ -10,6 +10,7 @@ from nilearn.image import mean_img
 def get_htmls(sub_id,
               num_runs,
               base_path,
+              save_path,
               save_htmls=False,
               save_zmaps=False,
               save_nifti=False,
@@ -18,8 +19,11 @@ def get_htmls(sub_id,
     design_matricies = []
     for run in range(1, num_runs + 1):
         r_num = str(run)
-        file_name = f'{sub_id}_ses-01_task-ptlocal_run-{r_num}_bold.nii.gz'
+        # TODO: This needs to be changed to derivatives
+        file_name = f'{sub_id}_ses-01_task-ptlocal_run-{r_num}_space-T1w_desc-preproc_bold.nii.gz'
         anat_path = os.path.join(base_path,
+                                 "derivatives",
+                                 "fmriprep",
                                  sub_id,
                                  'ses-01',
                                  'func',
@@ -78,29 +82,25 @@ def get_htmls(sub_id,
         html = plotting.view_img(z_map, bg_img=mean_image, threshold=2.5)
         if save_htmls:
             file_name = f"{sub_id}_{contrast_id}.html"
-            file_name = os.path.join("html_viewers", sub_id, file_name)
-            if not os.path.exists("html_viewers"):
-                os.mkdir("html_viewers")
-            if not os.path.exists(os.path.join("html_viewers", sub_id)):
-                os.mkdir(os.path.join("html_viewers", sub_id))
-            html.save_as_html(file_name)
+            file_path = os.path.join(save_path, "contrast_html_viewers")
+            if not os.path.exists(file_path):
+                os.mkdir(file_path)
+            file_save = os.path.join(file_path, file_name)
+            html.save_as_html(file_save)
         if save_zmaps:
             file_name = f"{sub_id}_{contrast_id}.nii"
-            file_name = os.path.join("zmaps", sub_id, file_name)
-            if not os.path.exists("zmaps"):
-                os.mkdir("zmaps")
-            if not os.path.exists(os.path.join("zmaps", sub_id)):
-                os.mkdir(os.path.join("zmaps", sub_id))
-            nib.save(z_map, file_name)
-
+            file_path = os.path.join(save_path, "contrast_zmaps")
+            if not os.path.exists(file_path):
+                os.mkdir(file_path)
+            file_save = os.path.join(file_path, file_name)
+            nib.save(z_map, file_save)
         if save_nifti:
             file_name = f"{sub_id}_{contrast_id}.nii"
-            file_name = os.path.join("niftis", sub_id, file_name)
-            if not os.path.exists("niftis"):
-                os.mkdir("niftis")
-            if not os.path.exists(os.path.join("niftis", sub_id)):
-                os.mkdir(os.path.join("niftis", sub_id))
-            nib.save(p_values, file_name)
+            file_path = os.path.join(save_path, "contrast_niftis")
+            if not os.path.exists(file_path):
+                os.mkdir(file_path)
+            file_save = os.path.join(file_path, file_name)
+            nib.save(p_values, file_save)
 
         if save_bg_image:
             if not os.path.exists("mean_img"):
@@ -110,5 +110,28 @@ def get_htmls(sub_id,
 
 
 if __name__ == '__main__':
-    where = os.path.abspath(os.path.join("..", "..", "AMPB", "data"))
-    get_htmls('sub-NSxLxYKx1964', 3, where, save_zmaps=True)
+    base_path = os.path.join(
+        "C:\\",
+        "Users",
+        "tayja",
+        "OneDrive - UW",
+        "AMPB",
+        "data"
+    )
+
+    save_path = os.path.join(
+        "C:\\",
+        "Users",
+        "tayja",
+        "OneDrive - UW",
+        "PRFs",
+        "data",
+        "sub-NSxLxYKx1964"
+    )
+    get_htmls(
+        'sub-NSxLxYKx1964',
+        num_runs=3,
+        base_path=base_path,
+        save_path=save_path,
+        save_zmaps=True,
+        save_nifti=True)

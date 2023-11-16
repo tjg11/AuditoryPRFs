@@ -17,8 +17,11 @@ def convolve_hrf(
         "delta": 2.25,
         "tau": 1.2,
         "n": 3
-    }
+    },
+    save_pickle=True
 ):
+    """Uses stimulus representation to convolve stimulus with HRF. Returns
+    convolved stimulus."""
 
     dt = 0.01
 
@@ -27,7 +30,7 @@ def convolve_hrf(
     tau = hrf_params["tau"]
     n = hrf_params["n"]
 
-    #TODO: pre- and post- convolution interpolating, under assumption that the 
+    # TODO: pre- and post- convolution interpolating, under assumption that the
     # stimulus image is created at the same time resolution
     th = np.arange(0, 30, dt)
 
@@ -50,12 +53,13 @@ def convolve_hrf(
         arr=S
     )
 
-    #TODO: if save_pickle
+    # save as pickle file
     print(C.shape)
-    img_name = f"convolved_{subject_id}_{run_number}.pickle"
-    img_name = op.join(subject_id, img_name)
-    with open(img_name, "wb") as f:
-        pickle.dump(C, f)
-    
-    #TODO: return the convolved stimulus
+    if save_pickle:
+        img_name = f"convolved_{subject_id}_{run_number}.pickle"
+        img_name = op.join(subject_id, img_name)
+        with open(img_name, "wb") as f:
+            pickle.dump(C, f)
 
+    # return the convolved stimulus
+    return C

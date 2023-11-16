@@ -5,6 +5,8 @@
 # Version 2.0 of find_prf with better time complexity (ideally O(n^2))
 
 from os import path as op
+from pathlib import Path
+from dotenv import load_dotenv
 import numpy as np
 import nibabel as nib
 from scipy.stats import pearsonr
@@ -14,6 +16,7 @@ import pickle
 import scipy
 import time
 import os
+import matplotlib.pyplot as plt
 
 print("\n+-------------Script Starts Here-------------+\n")
 
@@ -25,35 +28,6 @@ sanity_check = True
 plot_timecourses = True
 # plot_timecourse = False
 print_status = False
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# Pick a subject
-subject_id = "sub-EBxGxCCx1986"
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# Load one data file
-# For analyzing specific files
-
-base_path = os.path.dirname(os.path.abspath(__file__))
-img_name = op.join(base_path,
-                   subject_id,
-                   ("convolved_" + subject_id + "_1.pickle"))
-with open(img_name, "rb") as f:
-    loaded_record = pickle.load(f)
-
-# Sanity check the loaded file
-if sanity_check:
-    print(
-        f"""Total length of run should be 416 seconds and total rows per second
-        should be 100. Shape should be 41600, 9.")
-        Shape is: {loaded_record.shape}.
-        Total length of run: {loaded_record.shape[0] / 100} seconds.
-        Total rows per second: {loaded_record.shape[0] / 416} rows.""")
-
-# -------------------------------------------------------------------
-
 # -------------------------------------------------------------------
 
 
@@ -82,11 +56,29 @@ def error_function(params, stim_space, real_data, convolved_stim):
     pred = prediction_function(model, convolved_stim)
 
     # Normalize real data and pred data - move normalization of real data
-    if np.amax(pred) != np.amin(pred):
-        pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
+    pred = np.array(pred)
+
+    # normalize using z-score method (if pred std doesn't equal 0)
+    if pred.std() != 0:
+        pred = (pred - pred.mean()) / pred.std()
+    # if np.amax(pred) != np.amin(pred):
+    #     pred = (pred - np.amin(pred)) / (np.amax(pred) - np.amin(pred))
 
     # Calculate MSE
-    error = mean_squared_error(pred, real_data)
+    # check for nan in prediction timecourse
+    if np.isnan(np.sum(pred)):
+        print("NAN IN PREDICTION DATA")
+    # check for nan in real data
+    if np.isnan(np.sum(real_data)):
+        print("NAN IN REAL DATA")
+        print(np.any(np.isnan(real_data)))
+        print(np.count_nonzero(np.isnan(real_data)))
+        plt.plot(real_data)
+        plt.show()
+        plt.plot(pred)
+        plt.show()
+    # THIS WAS IN THE WRONG ORDER????
+    error = mean_squared_error(real_data, pred)
 
     return error
 
@@ -134,11 +126,19 @@ def find_prf(subject_id,
              mask=None,
              x_padding=(0, 0),
              y_padding=(0, 0)):
+    # load environment variables
+    load_dotenv()
+    # TODO: change to be generalizeable
+    base_path = Path(os.getenv('BASE_PATH'))
+    print(base_path)
+    img_name = op.join(
+        base_path,
+        "Scripts",
+        "PythonScripts",
+        subject_id,
+        f"convolved_{subject_id}_{ses_number}.pickle")
 
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    img_name = op.join(base_path,
-                       subject_id,
-                       f"convolved_{subject_id}_{ses_number}.pickle")
+    print(img_name)
     with open(img_name, "rb") as f:
         loaded_record = pickle.load(f)
 
@@ -182,17 +182,18 @@ def find_prf(subject_id,
         print(f"Shape is {c_tr.shape}.")
         print(f"There are {c_tr.shape[0]} trials.")
 
-    # Load brain data #TODO: CHANGE TO DERIVATIVES
-    brain_file = (f"_task-ampb_run-{ses_number[1]}_bold.nii.gz")
-    brain_path = op.join(base_path,
-                         "..",
-                         "..",
-                         "AMPB",
-                         "data",
-                         subject_id,
-                         "ses-02",
-                         "func",
-                         f"{subject_id}_ses-02{brain_file}")
+    # Load brain data [CHANGED TO DERIVATIVES]
+    bf = (f"_task-ampb_run-{ses_number[1]}_space-T1w_desc-preproc_bold.nii.gz")
+    brain_path = op.join(
+        base_path,
+        "AMPB",
+        "data",
+        "derivatives",
+        "fmriprep",
+        subject_id,
+        "ses-02",
+        "func",
+        f"{subject_id}_ses-02{bf}")
     bold_img = nib.load(brain_path)
     bold_data = bold_img.get_fdata()
     print(f"Shape of brain data is {bold_data.shape}.")
@@ -238,10 +239,13 @@ def find_prf(subject_id,
 
         # Set timecourse
         x, y, z = coord
-        voxel = bold_data[x, y, z, :]
-        min_voxel = (voxel - np.amin(voxel))
-        max_voxel = (np.amax(voxel) - np.amin(voxel))
-        norm_voxel = min_voxel / max_voxel
+        voxel = np.array(bold_data[x, y, z, :])
+        # min_voxel = (voxel - np.amin(voxel))
+        # max_voxel = (np.amax(voxel) - np.amin(voxel))
+        if voxel.std() != 0:
+            norm_voxel = (voxel - voxel.mean()) / voxel.std()
+        else:
+            norm_voxel = voxel
 
         print(f"\n-----Starting for {x, y, z} voxel------\n")
 
@@ -322,9 +326,16 @@ def find_prf(subject_id,
 
 
 if __name__ == '__main__':
-    print(find_prf("sub-NSxGxHKx1965",
+    print(find_prf("sub-NSxLxYKx1964",
                    "02",
-                   op.join("rois",
-                           "sub-NSxGxHKx1965",
-                           "sub-NSxGxHKx1965_tarea25.0_p0.05_roi.pickle"),
+                   op.join(
+                    "C:\\",
+                    "Users",
+                    "Taylor Garrison",
+                    "OneDrive - UW",
+                    "PRFs",
+                    "data",
+                    "sub-NSxLxYKx1964",
+                    "rois",
+                    "sub-NSxLxYKx1964_tarea50_p0.0001_roi.pickle"),
                    x_padding=(800, 600)))
