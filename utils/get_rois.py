@@ -52,6 +52,7 @@ def get_rois(sub_id,
         paths_sub = os.getenv("ORIG_PATH")
         paths_sub = op.join(
             paths_sub,
+            "fmriprep",
             sub_id,
             "ses-01",
             "func"
@@ -79,6 +80,7 @@ def get_rois(sub_id,
         print("Brain mask file exists!")
     else:
         print("Brain mask file doesn't exist! Check the path for errors.")
+        print(f_name)
         return
     rb_mask = nib.load(f_name)  # original mask
     bin_rb_mask = rb_mask != 0  # binarized resampled b_mask
