@@ -19,7 +19,6 @@ def get_htmls(sub_id,
     design_matricies = []
     for run in range(1, num_runs + 1):
         r_num = str(run)
-        # TODO: This needs to be changed to derivatives
         f_text = "_space-T1w_desc-preproc_bold.nii.gz"
         file_name = f'{sub_id}_ses-01_task-ptlocal_run-{r_num}_{f_text}'
         anat_path = os.path.join(base_path,
