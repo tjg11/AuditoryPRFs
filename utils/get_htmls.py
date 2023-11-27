@@ -5,6 +5,7 @@ import numpy as np
 import os
 import nibabel as nib
 from nilearn.image import mean_img
+from dotenv import load_dotenv
 
 
 def get_htmls(sub_id,
@@ -128,10 +129,15 @@ if __name__ == '__main__':
         "data",
         "sub-NSxLxYKx1964"
     )
-    get_htmls(
-        'sub-NSxLxYKx1964',
-        num_runs=3,
-        base_path=base_path,
-        save_path=save_path,
-        save_zmaps=True,
-        save_nifti=True)
+    # run through all subject ids in .env
+    load_dotenv()
+    sub_ids = os.getenv("SUB_IDS")
+    for sub_id in sub_ids:
+        get_htmls(
+            sub_ids,
+            num_runs=3,
+            base_path=base_path,
+            save_path=save_path,
+            save_zmaps=True,
+            save_nifti=True)
+        print(f"FINISHED {sub_id}")

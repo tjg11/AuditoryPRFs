@@ -1,6 +1,7 @@
 import os
 import pickle
 import time
+import json
 from os import path as op
 import nibabel as nib
 import numpy as np
@@ -211,9 +212,10 @@ if __name__ == '__main__':
     # print(get_rois("sub-NSxLxYKx1964"))
     # get all rois using parameters in .env
     load_dotenv()
-    sub_ids = os.getenv("SUB_IDS")
-    t_areas = os.getenv("T_AREAS")
-    p_value = os.getenv("P_THRESH")
+    sub_ids = json.loads(os.environ['SUB_IDS'])
+    print(type(sub_ids))
+    t_areas = json.loads(os.environ['T_AREAS'])
+    p_value = json.loads(os.environ['P_THRESH'])
     print("CHECK VALUES")
     print(sub_ids)
     print(t_areas)
