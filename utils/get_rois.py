@@ -1,5 +1,6 @@
 import os
 import pickle
+import time
 from os import path as op
 import nibabel as nib
 import numpy as np
@@ -186,16 +187,36 @@ def batch_rois(
     complete_thresholds = np.vstack(np.meshgrid(t_areas, p_threshs))
     complete_thresholds = complete_thresholds.reshape(2, -1).T
 
+    # track number of faliures
+    fail_count = 0
+
     for sub_id in sub_ids:
         for t_area, p_thresh in complete_thresholds:
-            # get roi for subject with specific parameters
-            get_rois(
-                sub_id,
-                t_area,
-                p_thresh
-            )
+            try:
+                # get roi for subject with specific parameters
+                get_rois(
+                    sub_id,
+                    t_area,
+                    p_thresh
+                )
+            except FileNotFoundError:
+                fail_count += 1
+            print(f"{sub_id}: completed [{t_area}, {p_thresh}]")
+        print(f"FINISHED {sub_id}")
+    return fail_count
 
 
 if __name__ == '__main__':
     # sample subject data
-    print(get_rois("sub-NSxLxYKx1964"))
+    # print(get_rois("sub-NSxLxYKx1964"))
+    # get all rois using parameters in .env
+    load_dotenv()
+    sub_ids = os.getenv("SUB_IDS")
+    t_areas = os.getenv("T_AREAS")
+    p_value = os.getenv("P_THRESH")
+    print("CHECK VALUES")
+    print(sub_ids)
+    print(t_areas)
+    print(p_value)
+    time.sleep(5)
+    print(batch_rois(sub_ids, t_areas, p_value))
