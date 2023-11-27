@@ -21,7 +21,7 @@ def find_design_matrix(sub_id, run_number):
     base_path = os.path.join(
         "C:\\",
         "Users",
-        "tayja",
+        "Taylor Garrison",
         "OneDrive - UW",
         "AMPB",
         "data"

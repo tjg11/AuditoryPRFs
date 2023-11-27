@@ -67,7 +67,7 @@ def get_rois(sub_id,
 
     # load z-maps with original data and check for file not found
     f_name = op.join(paths_data_zmaps,
-                     f"{sub_id}_sound-silent.nii")
+                     f"{sub_id}_sound-silent.nii") #TODO: user defined contrast?
     if op.exists(f_name):
         print("Z-map file exists!")
     else:
@@ -128,7 +128,7 @@ def get_rois(sub_id,
 
     # load p-values and check for file not found
     f_name = op.join(paths_data_pvalue,
-                     f"{sub_id}_sound-silent.nii")
+                     f"{sub_id}_sound-silent.nii") #TODO: can save as .nii.gz to save storage space
     if op.exists(f_name):
         print("P-value file exists!")
     else:
