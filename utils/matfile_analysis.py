@@ -20,7 +20,7 @@ def open_matfile(path):
 def open_created_record(path):
     with open(path, "rb") as f:
         record = pickle.load(f)
-    return record.shape
+    return record
 
 
 def record_from_tsv(path, rep_time, volumes):
@@ -100,7 +100,7 @@ if __name__ == '__main__':
         "func",
         "sub-NSxLxYKx1964_ses-02_task-ampb_run-1_space-T1w_desc-preproc_bold.nii.gz"
     )
-    
+
     path5 = os.path.join(
         "C:\\",
         "Users",
@@ -115,7 +115,10 @@ if __name__ == '__main__':
     )
 
     print(open_matfile(path))
-    print(open_created_record(path2))
+    record = open_created_record(path2)
+    plt.plot(record)
+    plt.show()
+    plt.close()
     print(get_time_params(path3))
     print(get_shape(path4))
     record = record_from_tsv(path5, 2, 215)
