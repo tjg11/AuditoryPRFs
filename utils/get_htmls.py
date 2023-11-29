@@ -3,8 +3,10 @@ from nilearn.glm.first_level import FirstLevelModel
 from nilearn import masking, plotting
 import numpy as np
 import os
+import json
 import nibabel as nib
 from nilearn.image import mean_img
+from dotenv import load_dotenv
 
 
 def get_htmls(sub_id,
@@ -19,8 +21,8 @@ def get_htmls(sub_id,
     design_matricies = []
     for run in range(1, num_runs + 1):
         r_num = str(run)
-        # TODO: This needs to be changed to derivatives
-        file_name = f'{sub_id}_ses-01_task-ptlocal_run-{r_num}_space-T1w_desc-preproc_bold.nii.gz'
+        f_text = "space-T1w_desc-preproc_bold.nii.gz"
+        file_name = f'{sub_id}_ses-01_task-ptlocal_run-{r_num}_{f_text}'
         anat_path = os.path.join(base_path,
                                  "derivatives",
                                  "fmriprep",
@@ -88,14 +90,14 @@ def get_htmls(sub_id,
             file_save = os.path.join(file_path, file_name)
             html.save_as_html(file_save)
         if save_zmaps:
-            file_name = f"{sub_id}_{contrast_id}.nii"
+            file_name = f"{sub_id}_{contrast_id}.nii.gz"
             file_path = os.path.join(save_path, "contrast_zmaps")
             if not os.path.exists(file_path):
                 os.mkdir(file_path)
             file_save = os.path.join(file_path, file_name)
             nib.save(z_map, file_save)
         if save_nifti:
-            file_name = f"{sub_id}_{contrast_id}.nii"
+            file_name = f"{sub_id}_{contrast_id}.nii.gz"
             file_path = os.path.join(save_path, "contrast_niftis")
             if not os.path.exists(file_path):
                 os.mkdir(file_path)
@@ -113,25 +115,30 @@ if __name__ == '__main__':
     base_path = os.path.join(
         "C:\\",
         "Users",
-        "tayja",
+        "Taylor Garrison",
         "OneDrive - UW",
         "AMPB",
         "data"
     )
 
-    save_path = os.path.join(
-        "C:\\",
-        "Users",
-        "tayja",
-        "OneDrive - UW",
-        "PRFs",
-        "data",
-        "sub-NSxLxYKx1964"
-    )
-    get_htmls(
-        'sub-NSxLxYKx1964',
-        num_runs=3,
-        base_path=base_path,
-        save_path=save_path,
-        save_zmaps=True,
-        save_nifti=True)
+    # run through all subject ids in .env
+    load_dotenv()
+    sub_ids = json.loads(os.environ['SUB_IDS'])
+    for sub_id in sub_ids:
+        save_path = os.path.join(
+            "C:\\",
+            "Users",
+            "Taylor Garrison",
+            "OneDrive - UW",
+            "PRFs",
+            "data",
+            sub_id
+        )
+        get_htmls(
+            sub_id,
+            num_runs=3,
+            base_path=base_path,
+            save_path=save_path,
+            save_zmaps=True,
+            save_nifti=True)
+        print(f"FINISHED {sub_id}")

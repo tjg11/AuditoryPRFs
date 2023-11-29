@@ -21,7 +21,7 @@ def find_design_matrix(sub_id, run_number):
     base_path = os.path.join(
         "C:\\",
         "Users",
-        "tayja",
+        "Taylor Garrison",
         "OneDrive - UW",
         "AMPB",
         "data"
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     fig, (ax1, ax2, ax3) = plt.subplots(figsize=(10, 6), nrows=1, ncols=3)
     plot_design_matrix(event_matrix, ax=ax1)
     ax1.set_title("Event-related design matrix", fontsize=12)
-    # plt.show()
+    plt.show()
     print(data)
 
     sub_id = 'sub-NSxLxIUx1994'
