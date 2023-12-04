@@ -116,7 +116,8 @@ if __name__ == '__main__':
 
     print(open_matfile(path))
     record = open_created_record(path2)
-    plt.plot(record)
+    print(record.shape)
+    plt.imshow(record[1:50, :])
     plt.show()
     plt.close()
     print(get_time_params(path3))
