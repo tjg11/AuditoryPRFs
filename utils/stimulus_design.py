@@ -117,6 +117,8 @@ def mark_bin_location(
     # change index if flipped
     if flipped == -1:
         target_idx = (abs(target_idx - S_LEN)) - 1
+    # convert to sound location TODO: change hardcoding
+    target_idx = target_idx * 7.5
     target_record[target_row, target_idx] = 1
     return None
 
