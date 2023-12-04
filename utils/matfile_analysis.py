@@ -114,10 +114,27 @@ if __name__ == '__main__':
         "sub-NSxLxYKx1964_ses-02_task-ampb_run-1_events.tsv"
     )
 
+    path6 = os.path.join(
+        "C:\\",
+        "Users",
+        "Taylor Garrison",
+        "OneDrive - UW",
+        "PRFs",
+        "data",
+        "sub-NSxLxYKx1964",
+        "stim_matricies",
+        "stim_record0.pickle"
+    )
+
     print(open_matfile(path))
     record = open_created_record(path2)
     print(record.shape)
-    plt.imshow(record[1:50, :])
+    plt.imshow(record[1:160, :])
+    plt.show()
+    plt.close()
+    record = open_created_record(path6)
+    print(record.shape)
+    plt.imshow(record[1:160, :])
     plt.show()
     plt.close()
     print(get_time_params(path3))

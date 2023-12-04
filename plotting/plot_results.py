@@ -73,9 +73,9 @@ def plot_results(subject_id,
         print(f"Median is {np.median(result_values)}")
 
     # get values for histogram and remove zeros
-    counts, bins = np.histogram(result_values)
-    counts = counts[1:]
-    bins = bins[1:]
+    counts, bins = np.histogram(result_values, bins=np.arange(-30, 30, 1))
+    # counts = counts[1:]
+    # bins = bins[1:]
 
     # plot histogram and map
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
