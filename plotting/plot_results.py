@@ -17,12 +17,24 @@ def plot_results(subject_id,
     load_dotenv()
 
     # set prf data path
-    prf_path = os.getenv("DATA_PATH")
+    data_path = os.getenv("DATA_PATH")
     prf_path = op.join(
-        prf_path,
+        data_path,
         subject_id,
         "prfs"
     )
+
+    roi_path = op.join(
+        data_path,
+        subject_id,
+        "rois",
+        "sub-NSxLxYKx1964_tarea50_p0.0001_roi.pickle"
+    )
+
+    with open(roi_path, "rb") as f:
+        roi_mask = pickle.load(f)
+
+    
 
     # set brain data path and load
     bf = ("_task-ampb_run-2_space-T1w_desc-preproc_bold.nii.gz")
@@ -66,10 +78,25 @@ def plot_results(subject_id,
 
     # get error values
     result_values = results[focus_result]
+
+    # apply roi mask to results
+    print(result_values.shape, roi_mask.shape)
+    print(type(result_values), type(roi_mask))
+    result_values = result_values.astype(float)
+    roi_mask = roi_mask.astype(bool)
+    result_values[~roi_mask] = np.nan
+
+    # threshold results based on stim space
+    result_values[result_values > 40] = np.nan
+    result_values[result_values < -40] = np.nan
+
+    # threshold based on error
+    result_values[results['error'] < 0.5] = np.nan
+
     if check:
         print(f"Shape of error is: {result_values.shape}")
-        print(f"Max stat is {np.amax(result_values)}.")
-        print(f"Min stat is {np.amin(result_values)}.")
+        print(f"Max stat is {np.nanmax(result_values)}.")
+        print(f"Min stat is {np.nanmin(result_values)}.")
         print(f"Median is {np.median(result_values)}")
 
     # get values for histogram and remove zeros
@@ -94,13 +121,13 @@ def plot_results(subject_id,
     # plot_values[plot_values < -30] = np.nan
     # plot_values[plot_values > 30] = np.nan
     # plot_values[np.abs(plot_values) < 0.001] = np.nan
-    plot_values[plot_values < 0.001] = np.nan
+    # plot_values[plot_values < 0.001] = np.nan
 
     im1 = ax2.imshow(
         plot_values,
         cmap=cmap,
-        # vmin=0.0000000000001,
-        vmin=0.001,
+        vmin=-30,
+        vmax=30,
         interpolation='nearest',
         alpha=0.75)
     ax2.set_title(f"{focus_result.capitalize()} for z-slice {z_slice}")
@@ -111,4 +138,4 @@ def plot_results(subject_id,
 
 
 if __name__ == "__main__":
-    plot_results("sub-NSxLxYKx1964", 25, focus_result="mus")
+    plot_results("sub-NSxLxYKx1964", 26, focus_result="mus")
