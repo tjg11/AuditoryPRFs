@@ -312,28 +312,33 @@ def stimulus_design(path: str,
         return matfiles
     file_count = 0
     # start iterating through matfiles and creating stim records
-    for matfile_idx in len(range(matfiles)):
+    for matfile_idx in range(len(matfiles)):
         # set matfile
         matfile = matfiles[matfile_idx]
         # get conditions array
         conditions = get_conditions(matfile)
         # check that conditions were found
-        if len(conditions == 0):
+        if len(conditions) == 0:
             print("Conditions not found for this matfile.")
             continue
         # change conditions to numpy array
         conditions = np.array(conditions)
         # separate directions from actual conditions
         directions, conditions = get_directions(conditions)
-        if len(directions) == 0 or len(conditions == 0):
+        if len(directions) == 0 or len(conditions) == 0:
             print("Getting directions/conditions raised an index error.")
             print("Check [DIR_COL] and [SEL_COL].")
             continue
         # get empty stim_record
         stim_record = make_empty_record()
         # fill in stim_record
-        val_stim_record = make_val_stim_record(stim_record)
-        bin_stim_record = make_bin_stim_record(stim_record)
+        if save_val or save_fig:
+            val_stim_record = make_val_stim_record(stim_record)
+        if save_bin:
+            bin_stim_record = make_bin_stim_record(
+                stim_record,
+                directions,
+                conditions)
         # save stim records
         if save_fig:
             save_record(
