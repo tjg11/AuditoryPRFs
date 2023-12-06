@@ -293,12 +293,11 @@ def make_bin_stim_record(
     return stim_record
 
 
-def stimulus_creation(path: str,
-                      stim_space: tuple,
-                      out_path: str = None,
-                      save_fig: bool = True,
-                      save_bin: bool = True,
-                      save_val: bool = True) -> list:
+def stimulus_design(path: str,
+                    out_path: str = None,
+                    save_fig: bool = False,
+                    save_bin: bool = False,
+                    save_val: bool = False) -> list:
     """Creates Python compatable stimulus design from .mat files.
     Takes path to subject data and stimulus space representation as a
     parameter. Path should contain .mat files generated from trials containing
@@ -311,7 +310,7 @@ def stimulus_creation(path: str,
     if len(matfiles) == 0:
         print("No matfiles found. Please check path and try again")
         return matfiles
-
+    file_count = 0
     # start iterating through matfiles and creating stim records
     for matfile_idx in len(range(matfiles)):
         # set matfile
@@ -356,3 +355,6 @@ def stimulus_creation(path: str,
                 out_path,
                 'bin'
             )
+        file_count += 1
+
+    return file_count
