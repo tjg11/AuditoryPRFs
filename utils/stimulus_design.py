@@ -35,16 +35,19 @@ def get_conditions(path: str) -> list:
     as parameter."""
     # load matfile as dict with variables as keys
     mat_file = scipy.io.loadmat(path)
+    print(len(mat_file['conditions'][0][0][0]))
     # try to get conditions out of dict
     try:
         conditions = mat_file['conditions'][0][0][0]
     except KeyError:
         print("Conditions not found in matfile.")
+        print("Specifically here")
         return []
     except IndexError:
         print("Error in indexing matfile.")
         return []
     finally:
+        print("Found conditions")
         return conditions
 
 
@@ -116,7 +119,13 @@ def mark_bin_location(
     target_idx = int(target_val - 1)
     # change index if flipped
     if flipped == -1:
-        target_idx = (abs(target_idx - S_LEN)) - 1
+        target_idx = (abs(target_idx - 9)) - 1
+    # convert to sound location TODO: change hardcoding
+    print(target_idx)
+    target_idx = int(target_idx * 7.5) - 1
+    print(target_idx)
+    if target_idx == -1:
+        target_idx = 0
     target_record[target_row, target_idx] = 1
     return None
 
@@ -230,7 +239,7 @@ def make_bin_stim_record(
         # insert location of audio
         elif times_rep < max_reps:
             # if still on sound
-            if sample_x < S_LEN:
+            if sample_x < 9:
                 # get location
                 target = conditions[sample_y, sample_x]
                 # add if bursts less than N_BURSTS
@@ -294,7 +303,6 @@ def make_bin_stim_record(
 
 
 def stimulus_creation(path: str,
-                      stim_space: tuple,
                       out_path: str = None,
                       save_fig: bool = True,
                       save_bin: bool = True,
@@ -312,29 +320,36 @@ def stimulus_creation(path: str,
         print("No matfiles found. Please check path and try again")
         return matfiles
 
+    print(matfiles[1])
     # start iterating through matfiles and creating stim records
-    for matfile_idx in len(range(matfiles)):
+    for matfile_idx in range(len(matfiles)):
         # set matfile
         matfile = matfiles[matfile_idx]
         # get conditions array
         conditions = get_conditions(matfile)
         # check that conditions were found
-        if len(conditions == 0):
+        if len(conditions) == 0:
             print("Conditions not found for this matfile.")
             continue
         # change conditions to numpy array
         conditions = np.array(conditions)
         # separate directions from actual conditions
         directions, conditions = get_directions(conditions)
-        if len(directions) == 0 or len(conditions == 0):
+        if len(directions) == 0 or len(conditions) == 0:
             print("Getting directions/conditions raised an index error.")
             print("Check [DIR_COL] and [SEL_COL].")
             continue
         # get empty stim_record
         stim_record = make_empty_record()
         # fill in stim_record
-        val_stim_record = make_val_stim_record(stim_record)
-        bin_stim_record = make_bin_stim_record(stim_record)
+        if save_val:
+            val_stim_record = make_val_stim_record(
+                                stim_record,
+                                directions,
+                                conditions)
+        bin_stim_record = make_bin_stim_record(stim_record,
+                                               directions,
+                                               conditions)
         # save stim records
         if save_fig:
             save_record(
@@ -356,3 +371,29 @@ def stimulus_creation(path: str,
                 out_path,
                 'bin'
             )
+
+
+if __name__ == '__main__':
+    matfiles = os.path.join(
+        "C:\\",
+        "Users",
+        "Taylor Garrison",
+        "OneDrive - UW",
+        "AMPB",
+        "data",
+        "sub-NSxLxYKx1964",
+        "ses-02",
+        "func"
+    )
+    save = os.path.join(
+        "C:\\",
+        "Users",
+        "Taylor Garrison",
+        "OneDrive - UW",
+        "PRFs",
+        "data",
+        "sub-NSxLxYKx1964",
+        "stim_matricies"
+    )
+    stimulus_creation(matfiles, out_path=save, save_val=False, save_fig=False)
+
