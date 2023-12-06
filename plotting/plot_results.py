@@ -61,7 +61,7 @@ def plot_results(subject_id,
     img_name = op.join(prf_path, f"prf_results_{subject_id}_final.pickle")
 
     # convert to nifti
-    out_name = op.join(prf_path, "results.nii")
+    out_name = op.join(prf_path, "results.nii.gz")
 
     # load results and print keys
     with open(img_name, "rb") as f:
@@ -69,7 +69,7 @@ def plot_results(subject_id,
 
     # convert to nifti and save
     print(out_name)
-    img = nib.Nifti1Image(results[focus_result], np.eye(4))
+    img = nib.Nifti1Image(results[focus_result], bold_img.affine, bold_img.header)
     nib.save(img, out_name)
 
     if check:
@@ -197,4 +197,4 @@ def plot_results(subject_id,
 
 
 if __name__ == "__main__":
-    plot_results("sub-NSxLxYKx1964", 26, focus_result="mus")
+    plot_results("sub-NSxLxYKx1964", 24, focus_result="mus")
