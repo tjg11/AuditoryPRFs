@@ -19,7 +19,7 @@ def convolve_hrf(
         "tau": 1.2,
         "n": 3
     },
-    save_pickle=True
+    save_pickle=False
 ):
     """Uses stimulus representation to convolve stimulus with HRF. Returns
     convolved stimulus."""
