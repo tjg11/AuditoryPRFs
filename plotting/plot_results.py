@@ -166,8 +166,7 @@ def plot_results(subject_id,
             print(f"Median is {np.nanmedian(result_values)}")
 
         counts, bins = np.histogram(
-            result_values,
-            bins=[0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2.0])
+            result_values)
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 
         # histogram
