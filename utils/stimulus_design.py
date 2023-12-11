@@ -35,16 +35,19 @@ def get_conditions(path: str) -> list:
     as parameter."""
     # load matfile as dict with variables as keys
     mat_file = scipy.io.loadmat(path)
+    print(len(mat_file['conditions'][0][0][0]))
     # try to get conditions out of dict
     try:
         conditions = mat_file['conditions'][0][0][0]
     except KeyError:
         print("Conditions not found in matfile.")
+        print("Specifically here")
         return []
     except IndexError:
         print("Error in indexing matfile.")
         return []
     finally:
+        print("Found conditions")
         return conditions
 
 
@@ -116,7 +119,13 @@ def mark_bin_location(
     target_idx = int(target_val - 1)
     # change index if flipped
     if flipped == -1:
-        target_idx = (abs(target_idx - S_LEN)) - 1
+        target_idx = (abs(target_idx - 9)) - 1
+    # convert to sound location TODO: change hardcoding
+    print(target_idx)
+    target_idx = int(target_idx * 7.5) - 1
+    print(target_idx)
+    if target_idx == -1:
+        target_idx = 0
     target_record[target_row, target_idx] = 1
     return None
 
@@ -230,7 +239,7 @@ def make_bin_stim_record(
         # insert location of audio
         elif times_rep < max_reps:
             # if still on sound
-            if sample_x < S_LEN:
+            if sample_x < 9:
                 # get location
                 target = conditions[sample_y, sample_x]
                 # add if bursts less than N_BURSTS

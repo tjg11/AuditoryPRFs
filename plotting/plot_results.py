@@ -17,12 +17,24 @@ def plot_results(subject_id,
     load_dotenv()
 
     # set prf data path
-    prf_path = os.getenv("DATA_PATH")
+    data_path = os.getenv("DATA_PATH")
     prf_path = op.join(
-        prf_path,
+        data_path,
         subject_id,
         "prfs"
     )
+
+    roi_path = op.join(
+        data_path,
+        subject_id,
+        "rois",
+        "sub-NSxLxYKx1964_tarea50_p0.0001_roi.pickle"
+    )
+
+    with open(roi_path, "rb") as f:
+        roi_mask = pickle.load(f)
+
+    
 
     # set brain data path and load
     bf = ("_task-ampb_run-2_space-T1w_desc-preproc_bold.nii.gz")
@@ -50,7 +62,7 @@ def plot_results(subject_id,
     img_name = op.join(prf_path, f"prf_results_{subject_id}_final.pickle")
 
     # convert to nifti
-    out_name = op.join(prf_path, "results.nii")
+    out_name = op.join(prf_path, "results.nii.gz")
 
     # load results and print keys
     with open(img_name, "rb") as f:
@@ -58,7 +70,7 @@ def plot_results(subject_id,
 
     # convert to nifti and save
     print(out_name)
-    img = nib.Nifti1Image(results[focus_result], np.eye(4))
+    img = nib.Nifti1Image(results[focus_result], bold_img.affine, bold_img.header)
     nib.save(img, out_name)
 
     if check:
@@ -66,50 +78,124 @@ def plot_results(subject_id,
         print(f"Actual results keys: {results.keys()}")
 
     # get error values
-    result_values = results[focus_result]
-    if check:
-        print(f"Shape of error is: {result_values.shape}")
-        print(f"Max stat is {np.amax(result_values)}.")
-        print(f"Min stat is {np.amin(result_values)}.")
-        print(f"Median is {np.median(result_values)}")
+    if focus_result == "mus" or focus_result == "sigmas":
+        result_values = results[focus_result]
 
-    # get values for histogram and remove zeros
-    counts, bins = np.histogram(result_values)
-    counts = counts[1:]
-    bins = bins[1:]
+        # apply roi mask to results
+        print(result_values.shape, roi_mask.shape)
+        print(type(result_values), type(roi_mask))
+        result_values = result_values.astype(float)
+        roi_mask = roi_mask.astype(bool)
+        result_values[~roi_mask] = np.nan
 
-    # plot histogram and map
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+        # threshold results based on stim space
+        print(np.count_nonzero(~np.isnan(result_values)))
+        result_values[result_values > 40] = np.nan
+        result_values[result_values < -40] = np.nan
+        print(np.count_nonzero(~np.isnan(result_values)))
 
-    # histogram
-    ax1.stairs(counts, bins, fill=True)
-    ax1.set_title(f"Distribution of {focus_result}")
+        # check error values
+        error = results["error"]
+        print(f"Max stat is {np.nanmax(error)}.")
+        print(f"Min stat is {np.nanmin(error)}.")
+        # bool error values
+        error[error <= 1] = 0
+        error[error > 1] = 1
+        error = error.astype(bool)
 
-    # map
-    cmap = mpl.cm.get_cmap('jet').copy()
-    # cmap.set_under(color='grey')
+        # count number of non nan values
+        print(np.count_nonzero(~np.isnan(result_values)))
 
-    ax2.imshow(slice1, cmap='Greys')
+        # threshold based on error
+        result_values[error] = np.nan
 
-    plot_values = result_values[:, :, z_slice]
-    plot_values[plot_values < -30] = np.nan
-    plot_values[plot_values > 30] = np.nan
-    # plot_values[np.abs(plot_values) < 0.001] = np.nan
-    plot_values[plot_values < 0.001] = np.nan
+        # count number of non nan values again
+        print(np.count_nonzero(~np.isnan(result_values)))
 
-    im1 = ax2.imshow(
-        plot_values,
-        cmap=cmap,
-        # vmin=0.0000000000001,
-        vmin=0.001,
-        interpolation='nearest',
-        alpha=0.75)
-    ax2.set_title(f"{focus_result.capitalize()} for z-slice {z_slice}")
-    plt.colorbar(im1, ax=ax2)
-    # show plot
-    plt.show()
+        if check:
+            print(f"Shape of {focus_result} is: {result_values.shape}")
+            print(f"Max stat is {np.nanmax(result_values)}.")
+            print(f"Min stat is {np.nanmin(result_values)}.")
+            print(f"Median is {np.median(result_values)}")
+
+    # get values for histogram and remove zeros (for sigmas and mus)
+        counts, bins = np.histogram(result_values, bins=np.arange(-30, 30, 1))
+        # counts = counts[1:]
+        # bins = bins[1:]
+
+        # plot histogram and map
+        fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+
+        # histogram
+        ax1.stairs(counts, bins, fill=True)
+        ax1.set_title(f"Distribution of {focus_result}")
+
+        # map
+        cmap = mpl.cm.get_cmap('jet').copy()
+        # cmap.set_under(color='grey')
+
+        ax2.imshow(slice1, cmap='Greys')
+
+        plot_values = result_values[:, :, z_slice]
+        # plot_values[plot_values < -30] = np.nan
+        # plot_values[plot_values > 30] = np.nan
+        # plot_values[np.abs(plot_values) < 0.001] = np.nan
+        # plot_values[plot_values < 0.001] = np.nan
+
+        im1 = ax2.imshow(
+            plot_values,
+            cmap=cmap,
+            vmin=-30,
+            vmax=30,
+            interpolation='nearest',
+            alpha=0.75)
+        ax2.set_title(f"{focus_result.capitalize()} for z-slice {z_slice}")
+        plt.colorbar(im1, ax=ax2)
+        # show plot
+        plt.show()
+
+    else:
+        result_values = results[focus_result]
+        print(result_values.shape, type(result_values))
+        roi_mask = roi_mask.astype(bool)
+        result_values[~roi_mask] = np.nan
+        if check:
+            print(f"Shape of error is: {result_values.shape}")
+            print(f"Max stat is {np.nanmax(result_values)}.")
+            print(f"Min stat is {np.nanmin(result_values)}.")
+            print(f"Median is {np.nanmedian(result_values)}")
+
+        counts, bins = np.histogram(result_values, bins=[0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2.0])
+        fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+
+        # histogram
+        ax1.stairs(counts, bins, fill=True)
+        ax1.set_title(f"Distribution of {focus_result}")
+
+        # map
+        cmap = mpl.cm.get_cmap('jet').copy()
+        # cmap.set_under(color='grey')
+
+        ax2.imshow(slice1, cmap='Greys')
+
+        plot_values = result_values[:, :, z_slice]
+        # plot_values[plot_values < -30] = np.nan
+        # plot_values[plot_values > 30] = np.nan
+        # plot_values[np.abs(plot_values) < 0.001] = np.nan
+        # plot_values[plot_values < 0.001] = np.nan
+
+        im1 = ax2.imshow(
+            plot_values,
+            cmap=cmap,
+            interpolation='nearest',
+            alpha=0.75)
+        ax2.set_title(f"{focus_result.capitalize()} for z-slice {z_slice}")
+        plt.colorbar(im1, ax=ax2)
+        # show plot
+        plt.show()
+
     return
 
 
 if __name__ == "__main__":
-    plot_results("sub-NSxLxYKx1964", 25, focus_result="mus")
+    plot_results("sub-NSxLxYKx1964", 24, focus_result="mus")
