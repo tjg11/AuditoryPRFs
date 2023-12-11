@@ -29,6 +29,7 @@ def plot_results(subject_id,
     brain_path = os.getenv("ORIG_PATH")
     brain_path = op.join(
         brain_path,
+        "derivatives",
         "fmriprep",
         subject_id,
         "ses-02",
@@ -91,8 +92,8 @@ def plot_results(subject_id,
     ax2.imshow(slice1, cmap='Greys')
 
     plot_values = result_values[:, :, z_slice]
-    # plot_values[plot_values < -30] = np.nan
-    # plot_values[plot_values > 30] = np.nan
+    plot_values[plot_values < -30] = np.nan
+    plot_values[plot_values > 30] = np.nan
     # plot_values[np.abs(plot_values) < 0.001] = np.nan
     plot_values[plot_values < 0.001] = np.nan
 
