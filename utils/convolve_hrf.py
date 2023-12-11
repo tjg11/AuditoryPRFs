@@ -21,9 +21,16 @@ def convolve_hrf(
     },
     save_pickle=False
 ):
-    """Uses stimulus representation to convolve stimulus with HRF. Returns
-    convolved stimulus."""
+    """
+    Uses stimulus representation to convolve stimulus with HRF. Takes a
+    stimulus record (matrix), a path to save the convolved stimulus to
+    [required if  save_pickle is True], a label for the file name if saving the
+    stimulus [ defaults to 0], parameters for the HRF to be convolved with the
+    stimulus, and save_pickle, which saves out a pickle file if True, and does
+    not if False. Returns convolved stimulus.
+    """
 
+    # set sampling rate
     dt = 0.01
 
     # define HRF parameters
