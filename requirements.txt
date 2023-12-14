@@ -1,0 +1,9 @@
+python-dotenv == 1.0.0
+nilearn == 0.10.1
+nibabel == 4.0.2
+numpy == 1.5.2
+matplotlib == 3.5.3
+scipy == 1.9.2
+scikit-learn == 1.1.2
+scikit-image == 0.22.0
+pandas == 1.4.4
