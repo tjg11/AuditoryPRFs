@@ -8,6 +8,7 @@ import nibabel as nib
 from nilearn.image import mean_img
 from dotenv import load_dotenv
 
+
 def design_matrix(sample_rate: int,
                   n_volumes: int,
                   events):
@@ -23,7 +24,50 @@ def design_matrix(sample_rate: int,
     # return the design matrix
     return design_matrix
 
+
 def get_contrast_maps(data: list,
-                      design_matricies: list,
-                      contrast_labels: list,
-                      constrast_categories: list)
+                      design_matricies: list):
+    """
+    Takes an array of scans and a corrsepdong array of design matricies
+    and calculates contrast maps using motion labels. ONLY WORKS with design
+    matrix labels "silent", "stationary", and "motion". Returns z-score map,
+    p-value map, and contrast lable, respectivley, comparing sound conditions
+    to silent conditions.
+    """
+
+    # create contrast map based on shape of single design matrix
+    sample_matrix = design_matricies[0]
+    contrast_matrix = np.eye(sample_matrix.shape[1])
+
+    # create binary contrast matrix for create actual contrast labels
+    b_con = {
+        column: contrast_matrix[i]
+        for i, column in enumerate(sample_matrix.columns)
+    }
+
+    # create contrast label matrix
+    contrasts = {
+        "sound-silent":
+        (b_con["stationary"] + b_con["motion"]) - b_con["silent"]
+    }
+
+    # perform first level model fit
+    fmri_glm = FirstLevelModel(
+        drift_model="cosine",
+        signal_scaling=False,
+        minimize_memory=False
+    )
+    fmri_glm = fmri_glm.fit(data, design_matricies=design_matricies)
+
+    # calculate contrasts using label matrix and glm fit
+    for contrast_id, contrast_val in contrasts.items():
+        z_map = fmri_glm.compute_contrast(
+            contrast_val,
+            output_type="z_score"
+        )
+        p_values = fmri_glm.compute_contrsast(
+            contrast_val,
+            output_type="p_value"
+        )
+
+        return z_map, p_values, contrast_id
