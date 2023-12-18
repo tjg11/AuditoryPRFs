@@ -12,7 +12,7 @@ def design_matrix(sample_rate: int,
     in a dataframe. Returns the design matrix
     """
     # create time vector (timing of scan acquisition)
-    time_vector = np.arange(n_volumes * sample_rate)
+    time_vector = np.arange(n_volumes) * sample_rate
     # create the design matrix
     design_matrix = make_first_level_design_matrix(time_vector, events)
     # return the design matrix
@@ -20,17 +20,22 @@ def design_matrix(sample_rate: int,
 
 
 def get_contrast_maps(data: list,
-                      design_matricies: list):
+                      design_matrices: list):
     """
-    Takes an array of scans and a corrsepdong array of design matricies
+    Takes an array of scans and a corrsepdong array of design matrices
     and calculates contrast maps using motion labels. ONLY WORKS with design
     matrix labels "silent", "stationary", and "motion". Returns z-score map,
     p-value map, and contrast lable, respectivley, comparing sound conditions
     to silent conditions.
     """
 
+    # check shape of one scan and one event matrix
+    data_shape = data[0].shape
+    event_shape = design_matrices[0].shape
+    print(f"Data shape: {data_shape} - Event shape {event_shape}.")
+
     # create contrast map based on shape of single design matrix
-    sample_matrix = design_matricies[0]
+    sample_matrix = design_matrices[0]
     contrast_matrix = np.eye(sample_matrix.shape[1])
 
     # create binary contrast matrix for create actual contrast labels
@@ -51,7 +56,7 @@ def get_contrast_maps(data: list,
         signal_scaling=False,
         minimize_memory=False
     )
-    fmri_glm = fmri_glm.fit(data, design_matricies=design_matricies)
+    fmri_glm = fmri_glm.fit(data, design_matrices=design_matrices)
 
     # calculate contrasts using label matrix and glm fit
     for contrast_id, contrast_val in contrasts.items():
@@ -59,7 +64,7 @@ def get_contrast_maps(data: list,
             contrast_val,
             output_type="z_score"
         )
-        p_values = fmri_glm.compute_contrsast(
+        p_values = fmri_glm.compute_contrast(
             contrast_val,
             output_type="p_value"
         )
