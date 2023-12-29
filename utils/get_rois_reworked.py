@@ -4,7 +4,6 @@ from scipy.ndimage import binary_dilation
 
 
 def get_rois(
-        img: list,
         seg_img: list,
         brain_mask: list,
         label_csv: list,
@@ -23,10 +22,10 @@ def get_rois(
     """
 
     # check that shape of maps matches shape of image
-    if img.shape != p_values.shape:
+    if seg_img.shape != p_values.shape:
         print("Shape of image and p-values does not match")
         return
-    if img.shape != z_scores.shape:
+    if seg_img.shape != z_scores.shape:
         print("Shape of image and z-scores does not match")
         return
 
@@ -57,28 +56,28 @@ def get_rois(
 
     # threshold z-map using p-values and binarize
     z_scores[p_values > p_thresh] = 0
-    z_scores = z_scores != 0
+    bin_z_scores = z_scores != 0
 
     # create and filter labels based on target area
-    label_image = label(z_scores, connectivity=1)
+    label_image = label(bin_z_scores, connectivity=1)
     for region in regionprops(label_image):
         if region.area < roi_size:
             label_image[label_image == region.label] = 0
 
     # binarize label image
-    label_image = label_image != 0
+    bin_label_image = label_image != 0
 
     # dilate label image
-    label_image = binary_dilation(label_image)
+    bin_label_image = binary_dilation(bin_label_image)
 
     # binarize brain mask
-    brain_mask = brain_mask != 0
+    bin_brain_mask = brain_mask != 0
 
     # apply brain mask to dilated label image
-    label_image = label_image * brain_mask
+    brain_label_image = bin_label_image * bin_brain_mask
 
     # apply seg_img image to label image
-    final_image = label_image * seg_img
+    final_image = brain_label_image * seg_img
 
     # get count of included voxels
     voxels = np.count_nonzero(final_image)
