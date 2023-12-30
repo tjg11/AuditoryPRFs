@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import time
 import pandas as pd
 import numpy as np
 import nibabel as nib
@@ -172,3 +173,4 @@ if __name__ == "__main__":
         print(f"START OF {sub_id}:")
         for key in count_dict.keys():
             print(f"PARAMS: {key} SIZE - {count_dict[key]}")
+        time.sleep(6)
