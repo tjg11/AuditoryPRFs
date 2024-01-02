@@ -1,12 +1,12 @@
 import os
 import json
 import pickle
-import time
 import pandas as pd
 import numpy as np
 import nibabel as nib
 from get_rois_reworked import get_rois
 from dotenv import load_dotenv
+import time
 from settings import P_THRESHOLDS, ROI_SIZES
 
 
@@ -45,6 +45,19 @@ def batch_rois(
 
     # load z-scores
     z_scores = nib.load(z_score_path).get_fdata()
+
+    # print stats for p_values and z_scores
+    p_mean = np.mean(p_values)
+    z_mean = np.mean(z_scores)
+
+    p_max = np.amax(p_values)
+    z_max = np.amax(z_scores)
+
+    p_min = np.amin(p_values)
+    z_min = np.amin(z_scores)
+
+    print(f"P-VALUES: min = {p_min} max = {p_max} mean = {p_mean}")
+    print(f"Z-SCORES: min = {z_min} max = {z_max} mean = {z_mean}")
 
     # get an array of all combinations of p-values and roi sizes
     complete_thresholds = np.vstack(np.meshgrid(roi_sizes, p_thresholds))
@@ -100,6 +113,9 @@ if __name__ == "__main__":
     mask_name = os.getenv("MASK_NAME")
     p_name = os.getenv("P_NAME")
     z_name = os.getenv("Z_NAME")
+
+    # initialize dataframe to store all ROI sizes
+    roi_counts = pd.DataFrame()
 
     # iterate through subject ids and create
     for sub_id in sub_ids:
@@ -171,6 +187,16 @@ if __name__ == "__main__":
 
         # display results in a readable way
         print(f"START OF {sub_id}:")
+        indicies = []
         for key in count_dict.keys():
             print(f"PARAMS: {key} SIZE - {count_dict[key]}")
-        time.sleep(6)
+            indicies.append(str(key))
+        df = pd.DataFrame(data=count_dict, index=[sub_id])
+        roi_counts = pd.concat([roi_counts, df], axis=0)
+        print(roi_counts.head())
+    # set path to save csv and save
+    count_path = os.path.join(
+        data_path,
+        "roi_counts.csv"
+    )
+    roi_counts.to_csv(count_path)

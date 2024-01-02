@@ -37,26 +37,42 @@ def get_rois(
             }
         )
 
+    # get initial number of voxel below threshold
+    p_cnt = np.count_nonzero(p_values > p_thresh)
+    print(f"P-VALUES BELOW THRESHOLD: {p_cnt}")
+
     # find indicies to filter for in seg_img
+    bin_seg = seg_img.copy()
     target_idxs = []
     for label_id in labels:
         target = label_csv[label_csv.name == label_id]
         target_idx = target.iloc[0][0]
         target_idxs.append(target_idx)
 
-    # create mask array using target indicies
+    # create mask array using target indicies & keep track of matching voxels
+    m_cnt = 0
     for target_idx in target_idxs:
-        filt_seg = seg_img.copy()
-        filt_seg[filt_seg == target_idx] = 0
-        seg_img = filt_seg * seg_img
+        print(F"UNIQUE VALUES IN COPIED SEGMENTATION: {np.unique(bin_seg)}")
+        m_cnt += np.count_nonzero(bin_seg == target_idx)
+        print(F"VOXELS IN TARGET {target_idx}: {m_cnt}")
+        bin_seg[bin_seg == target_idx] = -1
 
     # flip values so that 1 means keep and 0 means don't keep
-    seg_img[seg_img != 0] = 1
-    seg_img = 1 - seg_img
+    bin_seg[bin_seg != -1] = 0
+    bin_seg[bin_seg == -1] = 1
+
+    # get number of voxels in segmentation mask
+    s_cnt = np.count_nonzero(bin_seg)
+    print(F"VOXELS IN SEGMENTATION MASK: {s_cnt}")
+    print(f"MATCHING VOXELS IN ORIGINAL SEGMENTATION: {m_cnt}")
+    print(F"UNIQUE VALUES IN SEGMENGATION MASK: {np.unique(bin_seg)}")
+
+    # check value against number of matching indicies in
 
     # threshold z-map using p-values and binarize
-    z_scores[p_values > p_thresh] = 0
-    bin_z_scores = z_scores != 0
+    z_thresh_scores = z_scores.copy()
+    z_thresh_scores[p_values > p_thresh] = 0
+    bin_z_scores = z_thresh_scores != 0
 
     # create and filter labels based on target area
     label_image = label(bin_z_scores, connectivity=1)
@@ -76,8 +92,8 @@ def get_rois(
     # apply brain mask to dilated label image
     brain_label_image = bin_label_image * bin_brain_mask
 
-    # apply seg_img image to label image
-    final_image = brain_label_image * seg_img
+    # apply bin_seg image to label image
+    final_image = brain_label_image * bin_seg
 
     # get count of included voxels
     voxels = np.count_nonzero(final_image)

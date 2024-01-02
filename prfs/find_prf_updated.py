@@ -347,7 +347,7 @@ if __name__ == '__main__':
     # load dictionary
     with open(dict_path, "r") as f:
         roi_params = json.load(f)
-    
+
     # iterate through dictionary keys and perform PRF analysis for each ID
     for sub_id in roi_params.keys():
         # set roi params
@@ -358,7 +358,7 @@ if __name__ == '__main__':
             path_data,
             sub_id,
             "rois",
-            f"{sub_id}_roi_tarea{roi_area}_p{roi_threshold}.pickle"
+            f"{sub_id}_roi_size{roi_area}_p{roi_threshold}.pickle"
 
         )
         # do analysis
@@ -368,19 +368,3 @@ if __name__ == '__main__':
             roi_path,
             x_padding=(800, 600)
         ))
-
-
-
-    # print(find_prf("sub-NSxLxYKx1964",
-    #                "02",
-    #                op.join(
-    #                 "C:\\",
-    #                 "Users",
-    #                 "Taylor Garrison",
-    #                 "OneDrive - UW",
-    #                 "PRFs",
-    #                 "data",
-    #                 "sub-NSxLxYKx1964",
-    #                 "rois",
-    #                 "sub-NSxLxYKx1964_tarea50_p0.0001_roi.pickle"),
-    #                x_padding=(800, 600)))

@@ -38,8 +38,10 @@ def plot_results(subject_id,
     with open(dict_path, "r") as f:
         roi_params = json.load(f)
 
+    # set roi loading parameters
     roi_area, roi_threshold = roi_params[subject_id]
 
+    # set roi path
     roi_path = op.join(
         data_path,
         subject_id,
@@ -47,6 +49,7 @@ def plot_results(subject_id,
         f"{subject_id}_roi_size{roi_area}_p{roi_threshold}.pickle"
     )
 
+    # load roi
     with open(roi_path, "rb") as f:
         roi_mask = pickle.load(f)
 
