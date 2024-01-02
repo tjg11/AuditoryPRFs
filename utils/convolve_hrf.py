@@ -11,18 +11,26 @@ from os import path as op
 
 
 def convolve_hrf(
-    subject_id,
-    run_number,
+    stimulus_record,
+    out_path=None,
+    label=0,
     hrf_params={
         "delta": 2.25,
         "tau": 1.2,
         "n": 3
     },
-    save_pickle=True
+    save_pickle=False
 ):
-    """Uses stimulus representation to convolve stimulus with HRF. Returns
-    convolved stimulus."""
+    """
+    Uses stimulus representation to convolve stimulus with HRF. Takes a
+    stimulus record (matrix), a path to save the convolved stimulus to
+    [required if  save_pickle is True], a label for the file name if saving the
+    stimulus [ defaults to 0], parameters for the HRF to be convolved with the
+    stimulus, and save_pickle, which saves out a pickle file if True, and does
+    not if False. Returns convolved stimulus.
+    """
 
+    # set sampling rate
     dt = 0.01
 
     # define HRF parameters
@@ -39,25 +47,23 @@ def convolve_hrf(
     h = ((t_delta / tau) ** (n - 1)) * h_exp
     h[th < delta] = 0  # remove values prior to delta lag
 
-    # Open binarized data file from stimulus_creation.py
-    f_name = op.join(subject_id, f"binary_{subject_id}_{run_number}.pickle")
-    with open(f_name, "rb") as f:
-        S = pickle.load(f)
-
     # Print shape and plot data for sanity check
-    print(f"Shape of subject data: {S.shape}")
+    print(f"Shape of subject data: {stimulus_record.shape}")
 
     C = np.apply_along_axis(
         lambda x: scipy.signal.convolve(x, h, mode="same"),
         axis=0,
-        arr=S
+        arr=stimulus_record
     )
 
     # save as pickle file
     print(C.shape)
     if save_pickle:
-        img_name = f"convolved_{subject_id}_{run_number}.pickle"
-        img_name = op.join(subject_id, img_name)
+        img_name = f"convolved_stimulus_{label}.pickle"
+        img_name = op.join(
+            out_path,
+            img_name
+        )
         with open(img_name, "wb") as f:
             pickle.dump(C, f)
 

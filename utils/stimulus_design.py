@@ -302,11 +302,11 @@ def make_bin_stim_record(
     return stim_record
 
 
-def stimulus_creation(path: str,
-                      out_path: str = None,
-                      save_fig: bool = True,
-                      save_bin: bool = True,
-                      save_val: bool = True) -> list:
+def stimulus_design(path: str,
+                    out_path: str = None,
+                    save_fig: bool = False,
+                    save_bin: bool = False,
+                    save_val: bool = False) -> list:
     """Creates Python compatable stimulus design from .mat files.
     Takes path to subject data and stimulus space representation as a
     parameter. Path should contain .mat files generated from trials containing
@@ -319,8 +319,7 @@ def stimulus_creation(path: str,
     if len(matfiles) == 0:
         print("No matfiles found. Please check path and try again")
         return matfiles
-
-    print(matfiles[1])
+    file_count = 0
     # start iterating through matfiles and creating stim records
     for matfile_idx in range(len(matfiles)):
         # set matfile
@@ -342,14 +341,13 @@ def stimulus_creation(path: str,
         # get empty stim_record
         stim_record = make_empty_record()
         # fill in stim_record
-        if save_val:
-            val_stim_record = make_val_stim_record(
-                                stim_record,
-                                directions,
-                                conditions)
-        bin_stim_record = make_bin_stim_record(stim_record,
-                                               directions,
-                                               conditions)
+        if save_val or save_fig:
+            val_stim_record = make_val_stim_record(stim_record)
+        if save_bin:
+            bin_stim_record = make_bin_stim_record(
+                stim_record,
+                directions,
+                conditions)
         # save stim records
         if save_fig:
             save_record(
@@ -371,29 +369,6 @@ def stimulus_creation(path: str,
                 out_path,
                 'bin'
             )
+        file_count += 1
 
-
-if __name__ == '__main__':
-    matfiles = os.path.join(
-        "C:\\",
-        "Users",
-        "Taylor Garrison",
-        "OneDrive - UW",
-        "AMPB",
-        "data",
-        "sub-NSxLxYKx1964",
-        "ses-02",
-        "func"
-    )
-    save = os.path.join(
-        "C:\\",
-        "Users",
-        "Taylor Garrison",
-        "OneDrive - UW",
-        "PRFs",
-        "data",
-        "sub-NSxLxYKx1964",
-        "stim_matricies"
-    )
-    stimulus_creation(matfiles, out_path=save, save_val=False, save_fig=False)
-
+    return file_count

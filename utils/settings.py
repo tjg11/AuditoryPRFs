@@ -20,3 +20,10 @@ VAL_LEFT = 1
 VAL_RIGHT = 2
 # value representing number of 'bursts' of single sound
 N_BURSTS = 9
+
+# Settings for get_rois
+
+# p-value thresholds
+P_THRESHOLDS = [.001, .005, .01, .05, .1, .5]
+# roi-size thresholds
+ROI_SIZES = [5, 10, 25, 50, 75, 100]

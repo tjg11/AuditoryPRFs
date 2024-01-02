@@ -34,13 +34,12 @@ def plot_results(subject_id,
     with open(roi_path, "rb") as f:
         roi_mask = pickle.load(f)
 
-    
-
     # set brain data path and load
     bf = ("_task-ampb_run-2_space-T1w_desc-preproc_bold.nii.gz")
     brain_path = os.getenv("ORIG_PATH")
     brain_path = op.join(
         brain_path,
+        "derivatives",
         "fmriprep",
         subject_id,
         "ses-02",
@@ -69,7 +68,9 @@ def plot_results(subject_id,
 
     # convert to nifti and save
     print(out_name)
-    img = nib.Nifti1Image(results[focus_result], bold_img.affine, bold_img.header)
+    img = nib.Nifti1Image(results[focus_result],
+                          bold_img.affine,
+                          bold_img.header)
     nib.save(img, out_name)
 
     if check:
@@ -164,7 +165,8 @@ def plot_results(subject_id,
             print(f"Min stat is {np.nanmin(result_values)}.")
             print(f"Median is {np.nanmedian(result_values)}")
 
-        counts, bins = np.histogram(result_values, bins=[0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2.0])
+        counts, bins = np.histogram(
+            result_values)
         fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 
         # histogram

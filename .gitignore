@@ -50,4 +50,5 @@ mean_img/
 rois/
 tmp.ipynb
 .env
+roi_params.json
 
