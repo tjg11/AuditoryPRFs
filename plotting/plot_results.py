@@ -6,6 +6,7 @@ import nibabel as nib
 import matplotlib as mpl
 import pickle
 import os
+import json
 
 
 def plot_results(subject_id,
@@ -16,19 +17,34 @@ def plot_results(subject_id,
     # load environment variables
     load_dotenv()
 
+    # set path to GitHub directory
+    path_main = os.getenv("MAIN_PATH")
+
     # set prf data path
     data_path = os.getenv("DATA_PATH")
     prf_path = op.join(
         data_path,
         subject_id,
-        "prfs"
     )
+
+    # set path to json file storing mask file info for eac subject
+    dict_path = os.path.join(
+        path_main,
+        "prfs",
+        "roi_params.json"
+    )
+
+    # load json file to get mask parameters
+    with open(dict_path, "r") as f:
+        roi_params = json.load(f)
+
+    roi_area, roi_threshold = roi_params[subject_id]
 
     roi_path = op.join(
         data_path,
         subject_id,
         "rois",
-        "sub-NSxLxYKx1964_tarea50_p0.0001_roi.pickle"
+        f"{subject_id}_roi_size{roi_area}_p{roi_threshold}.pickle"
     )
 
     with open(roi_path, "rb") as f:
@@ -199,4 +215,10 @@ def plot_results(subject_id,
 
 
 if __name__ == "__main__":
-    plot_results("sub-NSxLxYKx1964", 24, focus_result="mus")
+    # load environment variables
+    load_dotenv()
+    # load subject ids
+    sub_ids = json.loads(os.getenv("SUB_IDS"))
+    for sub in range(len(sub_ids)):
+        # plot each result
+        plot_results(sub_ids[sub], 26, focus_result="mus")
