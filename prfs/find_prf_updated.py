@@ -69,6 +69,10 @@ def error_function(params, stim_space, real_data, convolved_stim):
     # check for nan in prediction timecourse
     if np.isnan(np.sum(pred)):
         print("NAN IN PREDICTION DATA")
+        print(model)
+        print(params)
+        plt.plot(pred)
+        plt.show()
     # check for nan in real data
     if np.isnan(np.sum(real_data)):
         print("NAN IN REAL DATA")
@@ -272,9 +276,9 @@ def find_prf(subject_id,
         iterable = zip(best_mus.flatten(), best_sis.flatten())
 
         # Find best seed out of grid of best seeds
-        temp_error = float('inf')
-        temp_mu = 0
-        temp_sig = 0
+        temp_error = float(np.inf)
+        temp_mu = np.nan
+        temp_sig = np.nan
         for i, seed in enumerate(iterable):
             try:
                 if seed[1] != 0:
@@ -282,7 +286,7 @@ def find_prf(subject_id,
                                        seed,
                                        (stim_space, norm_voxel, c_tr),
                                        method='Nelder-Mead')
-                if results.fun < temp_error:
+                if results.fun < temp_error or temp_error == np.nan:
                     temp_error = results.fun
                     temp_mu = results.x[0]
                     temp_sig = results.x[1]
@@ -292,20 +296,28 @@ def find_prf(subject_id,
                 # might want to include NaN as the error for uncalculable
                 # something that is not a numeric type
 
-        # Perform minimization on best seed
-        # try to use named arguments when possible for clarity
-        best_seed = [temp_mu, temp_sig]
-        the_results = minimize(
-            error_function,
-            best_seed,
-            (stim_space, norm_voxel, c_tr),
-            method="Nelder-Mead"
-        )  # not in for loop
+        # Perform minimization on best seed - skip if temp_mu or temp_sig is
+        # still nan
+        print(f"PARAMS FOR THIS SEED ARE {temp_mu} AND {temp_sig}")
+        if temp_mu is not np.nan and temp_sig is not np.nan:
+            best_seed = [temp_mu, temp_sig]
+            the_results = minimize(
+                error_function,
+                best_seed,
+                (stim_space, norm_voxel, c_tr),
+                method="Nelder-Mead"
+            )  # not in for loop
 
-        # Save results of final minimization
-        error_results[x, y, z] = the_results.fun
-        mu_results[x, y, z] = the_results.x[0]
-        sigma_results[x, y, z] = the_results.x[1]
+            # Save results of final minimization
+            error_results[x, y, z] = the_results.fun
+            mu_results[x, y, z] = the_results.x[0]
+            sigma_results[x, y, z] = the_results.x[1]
+        # If temp_mu and temp_sig are nan, save as nan
+        else:
+            print("SEED WAS NOT POSSIBLE, SAVING AS NAN")
+            error_results[x, y, z] = np.nan
+            mu_results[x, y, z] = np.nan
+            sigma_results[x, y, z] = np.nan
 
         voxels_done += 1
         complete_voxel = round((voxels_done / voxels_total) * 100, 2)
@@ -341,7 +353,7 @@ if __name__ == '__main__':
     dict_path = os.path.join(
         path_main,
         "prfs",
-        "roi_params.json"
+        "roi_paramsv2.json"
     )
 
     # load dictionary

@@ -45,10 +45,10 @@ def hemi_split(
     r_counts, bins = np.histogram(r_hemi_arr, bins=hist_bins)
 
     # get mean for l_counts
-    l_mean = np.round(np.mean(l_counts), 2)
+    l_mean = np.round(np.nanmean(l_hemi_arr), 2)
 
     # get mean deviation for r_counts
-    r_mean = np.round(np.mean(r_counts), 2)
+    r_mean = np.round(np.nanmean(r_hemi_arr), 2)
 
     # plot both historgrams
     if show_plots:
@@ -113,6 +113,7 @@ if __name__ == '__main__':
         # load mu results for subject (and error values)
         path_results = os.path.join(
             paths_data,
+            "prf_results_1000_v",
             f"prf_results_{sub_id}_final.pickle"
         )
         with open(path_results, "rb") as f:
@@ -121,8 +122,8 @@ if __name__ == '__main__':
         results = results['mus']
 
         # clean up results before passing
-        results[results > 40] = np.nan
-        results[results < -40] = np.nan
+        results[results > 30] = np.nan
+        results[results < -30] = np.nan
         results[error_values > 1] = np.nan
 
         # set paths for segmentation and label files
@@ -184,7 +185,8 @@ if __name__ == '__main__':
         l_count, r_count = hemi_split(
             results,
             l_seg,
-            r_seg
+            r_seg,
+            show_plots=True
         )
 
         # store the means
