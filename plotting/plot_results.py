@@ -24,7 +24,6 @@ def plot_results(subject_id,
     data_path = os.getenv("DATA_PATH")
     prf_path = op.join(
         data_path,
-        subject_id,
     )
 
     # set path to json file storing mask file info for eac subject

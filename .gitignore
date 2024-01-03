@@ -51,4 +51,5 @@ rois/
 tmp.ipynb
 .env
 roi_params.json
+roi_paramsv2.json
 
