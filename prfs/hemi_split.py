@@ -56,9 +56,11 @@ def hemi_split(
 
         ax1.stairs(l_counts, bins, fill=True)
         ax1.set_title(f"Left hemi: mean = {l_mean}")
+        ax1.axvline(l_mean, linewidth=1, color='r', ls='--')
 
         ax2.stairs(r_counts, bins, fill=True)
         ax2.set_title(f"Right hemi: mean = {r_mean}")
+        ax2.axvline(r_mean, linewidth=1, color='r', ls='--')
 
         plt.show()
 
