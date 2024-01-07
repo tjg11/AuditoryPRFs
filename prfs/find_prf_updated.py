@@ -34,6 +34,11 @@ print_status = False
 
 # Generate gaussian function
 def generate_gaussian(x, b, c):
+    """
+    Generates a gaussian fuction based on the given parameters: x (original
+    function data), b (center of the gaussian) and c (standard deviation of
+    the gaussian). Returns the created function.
+    """
     return np.exp(-(((x - b) ** 2) / (2 * c ** 2)))
 
 
