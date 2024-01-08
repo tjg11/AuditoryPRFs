@@ -1,6 +1,7 @@
 import numpy as np
 from os import path as op
 from dotenv import load_dotenv
+from nilearn import plotting
 import matplotlib.pyplot as plt
 import nibabel as nib
 import matplotlib as mpl
@@ -12,7 +13,9 @@ import json
 def plot_results(subject_id,
                  z_slice,
                  focus_result="error",
-                 check=True):
+                 check=True,
+                 save_html=True,
+                 show_plot=False):
 
     # load environment variables
     load_dotenv()
@@ -131,11 +134,28 @@ def plot_results(subject_id,
         # count number of non nan values again
         print(np.count_nonzero(~np.isnan(result_values)))
 
+        # convert array to nib image
+        img = nib.Nifti1Image(
+            result_values,
+            bold_img.affine,
+            bold_img.header)
+
         if check:
             print(f"Shape of {focus_result} is: {result_values.shape}")
             print(f"Max stat is {np.nanmax(result_values)}.")
             print(f"Min stat is {np.nanmin(result_values)}.")
             print(f"Median is {np.median(result_values)}")
+        if save_html:
+            html_path = os.path.join(
+                data_path,
+                "figures",
+                f"{subject_id}_{focus_result}_overlay.html"
+            )
+            html = plotting.view_img(
+                img,
+                bg_img=bold_img.slicer[:, :, :, 100],
+                threshold=0)
+            html.save_as_html(html_path)
 
     # get values for histogram and remove zeros (for sigmas and mus)
         counts, bins = np.histogram(result_values, bins=np.arange(-30, 30, 1))
@@ -171,7 +191,8 @@ def plot_results(subject_id,
         ax2.set_title(f"{focus_result.capitalize()} for z-slice {z_slice}")
         plt.colorbar(im1, ax=ax2)
         # show plot
-        plt.show()
+        if show_plot:
+            plt.show()
 
     else:
         result_values = results[focus_result]

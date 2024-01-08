@@ -14,7 +14,9 @@ def hemi_split(
         l_hemi: list,
         r_hemi: list,
         hist_bins=np.arange(-30, 30, 1),
-        show_plots=False
+        show_plots=False,
+        save_plots=False,
+        paths_save=None
 ):
     """
     Takes an array of images and two segmentation masks, one for the left
@@ -50,19 +52,21 @@ def hemi_split(
     # get mean deviation for r_counts
     r_mean = np.round(np.nanmean(r_hemi_arr), 2)
 
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+
+    ax1.stairs(l_counts, bins, fill=True)
+    ax1.set_title(f"Left hemi: mean = {l_mean}")
+    ax1.axvline(l_mean, linewidth=1, color='r', ls='--')
+
+    ax2.stairs(r_counts, bins, fill=True)
+    ax2.set_title(f"Right hemi: mean = {r_mean}")
+    ax2.axvline(r_mean, linewidth=1, color='r', ls='--')
     # plot both historgrams
     if show_plots:
-        fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
-
-        ax1.stairs(l_counts, bins, fill=True)
-        ax1.set_title(f"Left hemi: mean = {l_mean}")
-        ax1.axvline(l_mean, linewidth=1, color='r', ls='--')
-
-        ax2.stairs(r_counts, bins, fill=True)
-        ax2.set_title(f"Right hemi: mean = {r_mean}")
-        ax2.axvline(r_mean, linewidth=1, color='r', ls='--')
-
         plt.show()
+
+    if save_plots:
+        plt.savefig(paths_save)
 
     # return left and right hemisphere means
     return l_mean, r_mean
@@ -108,6 +112,13 @@ if __name__ == '__main__':
             f"{sub_id}_roi_size{roi_size}_p{roi_thrs}.pickle"
         )
 
+        # set path for saving individual figures
+        paths_save = os.path.join(
+            paths_data,
+            "figures",
+            f"{sub_id}_min_v_histogram.png"
+        )
+
         # load subject ROI mask
         with open(paths_subroi, "rb") as f:
             roi_mask = pickle.load(f)
@@ -115,7 +126,7 @@ if __name__ == '__main__':
         # load mu results for subject (and error values)
         path_results = os.path.join(
             paths_data,
-            "prf_results_1000_v",
+            "prf_results_min_v",
             f"prf_results_{sub_id}_final.pickle"
         )
         with open(path_results, "rb") as f:
@@ -188,7 +199,9 @@ if __name__ == '__main__':
             results,
             l_seg,
             r_seg,
-            show_plots=True
+            show_plots=False,
+            save_plots=True,
+            paths_save=paths_save
         )
 
         # store the means
