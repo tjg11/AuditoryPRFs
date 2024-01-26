@@ -13,6 +13,8 @@ def create_sub_folders():
 
     # set paths and subject ids
     data_path = os.getenv("DATA_PATH")
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
     sub_ids = json.loads(os.getenv("SUB_IDS"))
 
     # create subdirectory for each subject id\
